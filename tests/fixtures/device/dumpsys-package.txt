@@ -1,0 +1,17 @@
+Activity Resolver Table:
+  Non-Data Actions:
+      android.intent.action.MAIN:
+        a1b2c3d org.example.messenger/chat.simplex.app.MainActivity filter e4f5a6b
+
+Packages:
+  Package [org.example.messenger] (7c8d9e0):
+    appId=10234
+    pkg=Package{1f2e3d4 org.example.messenger}
+    codePath=/data/app/~~XXXXXXXXXXXXXXXXXXXXXX==/org.example.messenger-YYYYYYYYYYYYYYYYYYYYYY==
+    versionCode=7014 minSdk=26 targetSdk=35
+    minExtensionVersions=[]
+    versionName=7.1.4
+    signatures=PackageSignatures{5a6b7c8 version:3, signatures:[0a1b2c3d], past signatures:[]}
+  Package [com.example.other] (1a2b3c4):
+    versionCode=1 minSdk=26 targetSdk=35
+    versionName=1.0

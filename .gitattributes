@@ -1,0 +1,15 @@
+* text=auto eol=lf
+
+gradlew text eol=lf
+*.sh text eol=lf
+
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+*.jar binary
+*.png binary
+*.der binary
+*.keystore binary
+*.jks binary
+*.sxact binary
+tests/fixtures/fdroid/*.json binary

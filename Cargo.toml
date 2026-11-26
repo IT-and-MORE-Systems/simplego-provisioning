@@ -1,0 +1,56 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (c) 2026 Sascha Daemgen / IT & MORE Systems
+
+[package]
+name = "sxprov"
+version = "0.1.0-alpha"
+edition = "2021"
+publish = false
+description = "SimpleGo Provisioning: verify, deliver and flash SimpleGo phones from the admin laptop"
+license = "AGPL-3.0-or-later"
+repository = "https://github.com/IT-and-MORE-Systems/simplego-provisioning"
+
+# The binary name lives here only. The code reads it via CARGO_BIN_NAME.
+[[bin]]
+name = "sxprov"
+path = "src/main.rs"
+
+[dependencies]
+argon2 = { version = "=0.6.0", default-features = false, features = ["alloc", "zeroize"] }
+miniz_oxide = { version = "=0.8.9", default-features = false, features = ["with-alloc"] }
+base64ct = { version = "1.8", features = ["alloc"] }
+ring = "0.17"
+rpassword = "=7.5.5"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha3 = { version = "=0.12.0", default-features = false }
+ssh-key = { version = "=0.6.7", default-features = false, features = ["alloc", "encryption"] }
+toml = { version = "1", default-features = false, features = ["parse", "serde"] }
+ureq = { version = "3", default-features = false, features = ["rustls", "socks-proxy"] }
+x509-cert = { version = "0.3", default-features = false, features = ["pem"] }
+zeroize = { version = "=1.9.2", default-features = false, features = ["alloc"] }
+
+[dev-dependencies]
+rcgen = { version = "0.14", default-features = false, features = ["crypto", "ring", "pem"] }
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+strip = true
+
+
+# Argon2id with real parameters (64 MiB, 3 passes) is very slow unoptimised;
+# tests and the vector generator run it, so optimise it in dev builds too.
+[profile.dev.package.argon2]
+opt-level = 3
+
+[profile.dev.package.blake2]
+opt-level = 3
+
+# Test only: the fake adb of the delivery tests. An example target, so
+# `cargo test` builds it and `cargo build --release --bin sxprov` does not.
+[[example]]
+name = "fake-adb"
+path = "tests/support/fake_adb.rs"
+test = false

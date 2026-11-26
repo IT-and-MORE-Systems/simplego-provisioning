@@ -1,0 +1,1347 @@
+{
+  "format": "SXACT version 1 (activation-file-format.md, version 1 with the amendments of 2026-11-19 23:10, 2026-11-21 00:41, 2026-11-21 10:30 and 2026-11-21 11:00)",
+  "generator": "src/activation/vectors.rs in simplego-provisioning (SXACT_WRITE_VECTORS=1 cargo test vectors)",
+  "test_key": {
+    "key_id_hex": "dbbf11596d8029cbde96c679267d911e",
+    "openssh_public_key_file": "keys/sxact-TEST-ONLY-signing-key.pub",
+    "public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+  },
+  "vectors": [
+    {
+      "app_device_class": "phone",
+      "code": "784822+583218",
+      "expected": "ok",
+      "expected_payload": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "phone",
+        "file_id": "43cfddc1933b64e73df68d004e452182",
+        "issued_at": "2026-11-19T12:00:00Z",
+        "kind": "activation",
+        "network_mode": "tor_required",
+        "payload_version": 1,
+        "sequence": 0,
+        "servers": {
+          "smp": [
+            "smp://os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo:TEST-ONLY-PASSWORD@testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion"
+          ],
+          "xftp": [
+            "xftp://bHRK7qr8MA41K9dw3wVjRVkHUh2GkB5H9H3Hl2EP8Gg:TEST-ONLY-PASSWORD@testonlyxftpatestonlyxftpatestonlyxftpatestonlyxftpf3iad.onion:443"
+          ]
+        },
+        "support_address": "simplex:/contact#/?v=2-7&smp=smp%3A%2F%2F9s73H6gTl877RjGQ5pn339wJvGtjnkpedCq9FvmSmyY%40testonlysupporttestonlysupporttestonlysupporttestonoynqd.onion%2FzTSDY5LhYCOu2DuNwnglcNxtLEOCkfnr%23%2F%3Fv%3D1-4%26dh%3DMCowBQYDK2VuAyEAmLdt0a_L7q3_CKhTVm76_kQOlcDo0lY98hBaG7och3A%253D%26q%3Dc",
+        "update_key": "338553416a8fce785932b6a0cd61c688f9678f4dcfe7a4167d75d74709c9a882"
+      },
+      "file": "activation-phone.sxact",
+      "kind": "activation",
+      "name": "activation-phone",
+      "note": "valid phone activation file, mode tor_required, sequence 0",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "desktop",
+      "code": "929072+630215",
+      "expected": "ok",
+      "expected_payload": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "desktop",
+        "file_id": "db96080b8e9e5df2656e32c77f4b0465",
+        "issued_at": "2026-11-19T12:00:00Z",
+        "kind": "activation",
+        "network_mode": "tor_required",
+        "payload_version": 1,
+        "sequence": 0,
+        "servers": {
+          "smp": [
+            "smp://os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo:TEST-ONLY-PASSWORD@testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion"
+          ],
+          "xftp": [
+            "xftp://bHRK7qr8MA41K9dw3wVjRVkHUh2GkB5H9H3Hl2EP8Gg:TEST-ONLY-PASSWORD@testonlyxftpatestonlyxftpatestonlyxftpatestonlyxftpf3iad.onion:443"
+          ]
+        },
+        "support_address": "simplex:/contact#/?v=2-7&smp=smp%3A%2F%2F9s73H6gTl877RjGQ5pn339wJvGtjnkpedCq9FvmSmyY%40testonlysupporttestonlysupporttestonlysupporttestonoynqd.onion%2FzTSDY5LhYCOu2DuNwnglcNxtLEOCkfnr%23%2F%3Fv%3D1-4%26dh%3DMCowBQYDK2VuAyEAmLdt0a_L7q3_CKhTVm76_kQOlcDo0lY98hBaG7och3A%253D%26q%3Dc",
+        "update_key": "338553416a8fce785932b6a0cd61c688f9678f4dcfe7a4167d75d74709c9a882"
+      },
+      "file": "activation-desktop.sxact",
+      "kind": "activation",
+      "name": "activation-desktop",
+      "note": "valid desktop activation file, mode tor_required, sequence 0",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "735276x490904",
+      "expected": "ok",
+      "expected_payload": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "phone",
+        "file_id": "54bdadbaf04d5e5c58165b7a51c997c7",
+        "issued_at": "2026-11-19T12:00:00Z",
+        "kind": "activation",
+        "network_mode": "tor_optional",
+        "payload_version": 1,
+        "sequence": 0,
+        "servers": {
+          "smp": [
+            "smp://os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo:TEST-ONLY-PASSWORD@testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion,smp-a.example.invalid"
+          ],
+          "xftp": [
+            "xftp://bHRK7qr8MA41K9dw3wVjRVkHUh2GkB5H9H3Hl2EP8Gg:TEST-ONLY-PASSWORD@testonlyxftpatestonlyxftpatestonlyxftpatestonlyxftpf3iad.onion,xftp-a.example.invalid:443"
+          ]
+        },
+        "support_address": "simplex:/contact#/?v=2-7&smp=smp%3A%2F%2F9s73H6gTl877RjGQ5pn339wJvGtjnkpedCq9FvmSmyY%40testonlysupporttestonlysupporttestonlysupporttestonoynqd.onion%2FzTSDY5LhYCOu2DuNwnglcNxtLEOCkfnr%23%2F%3Fv%3D1-4%26dh%3DMCowBQYDK2VuAyEAmLdt0a_L7q3_CKhTVm76_kQOlcDo0lY98hBaG7och3A%253D%26q%3Dc",
+        "update_key": "338553416a8fce785932b6a0cd61c688f9678f4dcfe7a4167d75d74709c9a882"
+      },
+      "file": "activation-mode-tor-optional.sxact",
+      "kind": "activation",
+      "name": "activation-mode-tor-optional",
+      "note": "every server address has an onion and a clearnet host; the support address has only an onion host (support only over Tor, section 7 amended 2026-11-23)",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "735276x490904",
+      "expected": "ok",
+      "expected_payload": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "phone",
+        "file_id": "d965f47705dfb6cf9e561eef4245c5ab",
+        "issued_at": "2026-11-19T12:00:00Z",
+        "kind": "activation",
+        "network_mode": "direct",
+        "payload_version": 1,
+        "sequence": 0,
+        "servers": {
+          "smp": [
+            "smp://os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo:TEST-ONLY-PASSWORD@smp-a.example.invalid"
+          ],
+          "xftp": [
+            "xftp://bHRK7qr8MA41K9dw3wVjRVkHUh2GkB5H9H3Hl2EP8Gg:TEST-ONLY-PASSWORD@xftp-a.example.invalid:443"
+          ]
+        },
+        "support_address": "simplex:/contact#/?v=2-7&smp=smp%3A%2F%2F9s73H6gTl877RjGQ5pn339wJvGtjnkpedCq9FvmSmyY%40support.example.invalid%2FzTSDY5LhYCOu2DuNwnglcNxtLEOCkfnr%23%2F%3Fv%3D1-4%26dh%3DMCowBQYDK2VuAyEAmLdt0a_L7q3_CKhTVm76_kQOlcDo0lY98hBaG7och3A%253D%26q%3Dc",
+        "update_key": "338553416a8fce785932b6a0cd61c688f9678f4dcfe7a4167d75d74709c9a882"
+      },
+      "file": "activation-mode-direct.sxact",
+      "kind": "activation",
+      "name": "activation-mode-direct",
+      "note": "every address has a clearnet host",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "735276x490904",
+      "expected": "ok",
+      "expected_payload": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "phone",
+        "file_id": "9df2fb88fef86a4cd53113339e20786c",
+        "issued_at": "2026-11-19T12:00:00Z",
+        "kind": "activation",
+        "network_mode": "tor_required",
+        "payload_version": 1,
+        "sequence": 5,
+        "servers": {
+          "smp": [
+            "smp://os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo:TEST-ONLY-PASSWORD@testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion"
+          ],
+          "xftp": [
+            "xftp://bHRK7qr8MA41K9dw3wVjRVkHUh2GkB5H9H3Hl2EP8Gg:TEST-ONLY-PASSWORD@testonlyxftpatestonlyxftpatestonlyxftpatestonlyxftpf3iad.onion:443"
+          ]
+        },
+        "support_address": "simplex:/contact#/?v=2-7&smp=smp%3A%2F%2F9s73H6gTl877RjGQ5pn339wJvGtjnkpedCq9FvmSmyY%40testonlysupporttestonlysupporttestonlysupporttestonoynqd.onion%2FzTSDY5LhYCOu2DuNwnglcNxtLEOCkfnr%23%2F%3Fv%3D1-4%26dh%3DMCowBQYDK2VuAyEAmLdt0a_L7q3_CKhTVm76_kQOlcDo0lY98hBaG7och3A%253D%26q%3Dc",
+        "update_key": "338553416a8fce785932b6a0cd61c688f9678f4dcfe7a4167d75d74709c9a882"
+      },
+      "file": "activation-phone-sequence-5.sxact",
+      "kind": "activation",
+      "name": "activation-phone-sequence-5",
+      "note": "activation issued after updates 1 to 5; the app stores 5 as its last applied sequence",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "784822 + 583218 =",
+      "expected": "ok",
+      "expected_payload": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "phone",
+        "file_id": "43cfddc1933b64e73df68d004e452182",
+        "issued_at": "2026-11-19T12:00:00Z",
+        "kind": "activation",
+        "network_mode": "tor_required",
+        "payload_version": 1,
+        "sequence": 0,
+        "servers": {
+          "smp": [
+            "smp://os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo:TEST-ONLY-PASSWORD@testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion"
+          ],
+          "xftp": [
+            "xftp://bHRK7qr8MA41K9dw3wVjRVkHUh2GkB5H9H3Hl2EP8Gg:TEST-ONLY-PASSWORD@testonlyxftpatestonlyxftpatestonlyxftpatestonlyxftpf3iad.onion:443"
+          ]
+        },
+        "support_address": "simplex:/contact#/?v=2-7&smp=smp%3A%2F%2F9s73H6gTl877RjGQ5pn339wJvGtjnkpedCq9FvmSmyY%40testonlysupporttestonlysupporttestonlysupporttestonoynqd.onion%2FzTSDY5LhYCOu2DuNwnglcNxtLEOCkfnr%23%2F%3Fv%3D1-4%26dh%3DMCowBQYDK2VuAyEAmLdt0a_L7q3_CKhTVm76_kQOlcDo0lY98hBaG7och3A%253D%26q%3Dc",
+        "update_key": "338553416a8fce785932b6a0cd61c688f9678f4dcfe7a4167d75d74709c9a882"
+      },
+      "file": "activation-phone.sxact",
+      "kind": "activation",
+      "name": "code-display-form",
+      "note": "the code as on the card with spaces and a trailing =",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "735276X490904",
+      "expected": "ok",
+      "expected_payload": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "phone",
+        "file_id": "54bdadbaf04d5e5c58165b7a51c997c7",
+        "issued_at": "2026-11-19T12:00:00Z",
+        "kind": "activation",
+        "network_mode": "tor_optional",
+        "payload_version": 1,
+        "sequence": 0,
+        "servers": {
+          "smp": [
+            "smp://os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo:TEST-ONLY-PASSWORD@testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion,smp-a.example.invalid"
+          ],
+          "xftp": [
+            "xftp://bHRK7qr8MA41K9dw3wVjRVkHUh2GkB5H9H3Hl2EP8Gg:TEST-ONLY-PASSWORD@testonlyxftpatestonlyxftpatestonlyxftpatestonlyxftpf3iad.onion,xftp-a.example.invalid:443"
+          ]
+        },
+        "support_address": "simplex:/contact#/?v=2-7&smp=smp%3A%2F%2F9s73H6gTl877RjGQ5pn339wJvGtjnkpedCq9FvmSmyY%40testonlysupporttestonlysupporttestonlysupporttestonoynqd.onion%2FzTSDY5LhYCOu2DuNwnglcNxtLEOCkfnr%23%2F%3Fv%3D1-4%26dh%3DMCowBQYDK2VuAyEAmLdt0a_L7q3_CKhTVm76_kQOlcDo0lY98hBaG7och3A%253D%26q%3Dc",
+        "update_key": "338553416a8fce785932b6a0cd61c688f9678f4dcfe7a4167d75d74709c9a882"
+      },
+      "file": "activation-mode-tor-optional.sxact",
+      "kind": "activation",
+      "name": "code-alternative-characters",
+      "note": "capital X for x (the file's code has the operator x)",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "expected": "ok",
+      "expected_payload": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "phone",
+        "file_id": "37bf42e613f55074dc1366828cd2b705",
+        "issued_at": "2026-11-19T12:00:00Z",
+        "kind": "update",
+        "network_mode": "tor_required",
+        "payload_version": 1,
+        "sequence": 1,
+        "servers": {
+          "smp": [
+            "smp://os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo:TEST-ONLY-PASSWORD@testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion"
+          ],
+          "xftp": [
+            "xftp://bHRK7qr8MA41K9dw3wVjRVkHUh2GkB5H9H3Hl2EP8Gg:TEST-ONLY-PASSWORD@testonlyxftpatestonlyxftpatestonlyxftpatestonlyxftpf3iad.onion:443"
+          ]
+        },
+        "support_address": "simplex:/contact#/?v=2-7&smp=smp%3A%2F%2F9s73H6gTl877RjGQ5pn339wJvGtjnkpedCq9FvmSmyY%40testonlysupporttestonlysupporttestonlysupporttestonoynqd.onion%2FzTSDY5LhYCOu2DuNwnglcNxtLEOCkfnr%23%2F%3Fv%3D1-4%26dh%3DMCowBQYDK2VuAyEAmLdt0a_L7q3_CKhTVm76_kQOlcDo0lY98hBaG7och3A%253D%26q%3Dc"
+      },
+      "file": "update-phone.sxact",
+      "installation": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "phone",
+        "last_sequence": 0,
+        "update_key_hex": "338553416a8fce785932b6a0cd61c688f9678f4dcfe7a4167d75d74709c9a882",
+        "update_key_id_hex": "2b00b59645a8dfac24fbadf9a780fe3c"
+      },
+      "kind": "update",
+      "name": "update-phone",
+      "note": "valid phone update, sequence 1, after activation-phone",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "expected": "ok",
+      "expected_payload": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "desktop",
+        "file_id": "88a15b2e7aa46eaa6f70dbaf329e03b6",
+        "issued_at": "2026-11-19T12:00:00Z",
+        "kind": "update",
+        "network_mode": "tor_required",
+        "payload_version": 1,
+        "sequence": 2,
+        "servers": {
+          "smp": [
+            "smp://os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo:TEST-ONLY-PASSWORD@testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion"
+          ],
+          "xftp": [
+            "xftp://bHRK7qr8MA41K9dw3wVjRVkHUh2GkB5H9H3Hl2EP8Gg:TEST-ONLY-PASSWORD@testonlyxftpatestonlyxftpatestonlyxftpatestonlyxftpf3iad.onion:443"
+          ]
+        },
+        "support_address": "simplex:/contact#/?v=2-7&smp=smp%3A%2F%2F9s73H6gTl877RjGQ5pn339wJvGtjnkpedCq9FvmSmyY%40testonlysupporttestonlysupporttestonlysupporttestonoynqd.onion%2FzTSDY5LhYCOu2DuNwnglcNxtLEOCkfnr%23%2F%3Fv%3D1-4%26dh%3DMCowBQYDK2VuAyEAmLdt0a_L7q3_CKhTVm76_kQOlcDo0lY98hBaG7och3A%253D%26q%3Dc"
+      },
+      "file": "update-desktop.sxact",
+      "installation": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "desktop",
+        "last_sequence": 0,
+        "update_key_hex": "338553416a8fce785932b6a0cd61c688f9678f4dcfe7a4167d75d74709c9a882",
+        "update_key_id_hex": "2b00b59645a8dfac24fbadf9a780fe3c"
+      },
+      "kind": "update",
+      "name": "update-desktop",
+      "note": "valid desktop update, sequence 2, after activation-desktop",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "expected": "ok",
+      "expected_payload": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "phone",
+        "file_id": "d694899df3d959bd56f5b6652e6e6006",
+        "issued_at": "2026-11-19T12:00:00Z",
+        "kind": "update",
+        "network_mode": "tor_optional",
+        "payload_version": 1,
+        "sequence": 3,
+        "servers": {
+          "smp": [
+            "smp://os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo:TEST-ONLY-PASSWORD@testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion,smp-a.example.invalid"
+          ],
+          "xftp": [
+            "xftp://bHRK7qr8MA41K9dw3wVjRVkHUh2GkB5H9H3Hl2EP8Gg:TEST-ONLY-PASSWORD@testonlyxftpatestonlyxftpatestonlyxftpatestonlyxftpf3iad.onion,xftp-a.example.invalid:443"
+          ]
+        },
+        "support_address": "simplex:/contact#/?v=2-7&smp=smp%3A%2F%2F9s73H6gTl877RjGQ5pn339wJvGtjnkpedCq9FvmSmyY%40testonlysupporttestonlysupporttestonlysupporttestonoynqd.onion%2FzTSDY5LhYCOu2DuNwnglcNxtLEOCkfnr%23%2F%3Fv%3D1-4%26dh%3DMCowBQYDK2VuAyEAmLdt0a_L7q3_CKhTVm76_kQOlcDo0lY98hBaG7och3A%253D%26q%3Dc",
+        "update_key": "40d483f71d4dd14c19df85ef5cfe1747b23f87a7eaa4064227475ae0f4750f09"
+      },
+      "file": "update-phone-rotate-key.sxact",
+      "installation": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "phone",
+        "last_sequence": 1,
+        "update_key_hex": "338553416a8fce785932b6a0cd61c688f9678f4dcfe7a4167d75d74709c9a882",
+        "update_key_id_hex": "2b00b59645a8dfac24fbadf9a780fe3c"
+      },
+      "kind": "update",
+      "name": "update-phone-rotate-key",
+      "note": "sequence 3, changes the mode to tor_optional (less strict, named in the summary) and carries a new update_key that replaces the stored one; its support address has only an onion host (section 7 amended 2026-11-23)",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "784822+583219",
+      "expected": "wrong_code",
+      "file": "activation-phone.sxact",
+      "kind": "activation",
+      "name": "refused-wrong-code",
+      "note": "a well-formed code that is not the file's code",
+      "reason": "the code does not match this file",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "784822+58321a",
+      "expected": "bad_code",
+      "file": "activation-phone.sxact",
+      "kind": "activation",
+      "name": "refused-code-wrong-character",
+      "note": "refused before any key derivation",
+      "reason": "invalid activation code: the code has an invalid character (numbers 100000 to 999999, operator + - x :)",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "784822+58321",
+      "expected": "bad_code",
+      "file": "activation-phone.sxact",
+      "kind": "activation",
+      "name": "refused-code-too-short",
+      "note": "12 characters after mapping",
+      "reason": "invalid activation code: the code must be two six-digit numbers and one operator (12 characters after mapping, need 13)",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "929072+630215",
+      "expected": "device_class_mismatch",
+      "file": "activation-desktop.sxact",
+      "kind": "activation",
+      "name": "refused-device-class",
+      "note": "a desktop file imported by the phone app",
+      "reason": "the file is for another device class",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "784822+583218",
+      "expected": "unknown_key",
+      "file": "refused-unknown-key.sxact",
+      "kind": "any",
+      "name": "refused-unknown-key",
+      "note": "signed with a key that is not in the trusted list",
+      "reason": "the file is signed with a key that is not in the trusted list",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "784822+583218",
+      "expected": "bad_signature",
+      "file": "refused-altered-header.sxact",
+      "kind": "any",
+      "name": "refused-altered-header",
+      "note": "one byte of the salt changed",
+      "reason": "this file was not issued by IT & MORE Systems (signature invalid)",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "784822+583218",
+      "expected": "bad_signature",
+      "file": "refused-altered-ciphertext.sxact",
+      "kind": "any",
+      "name": "refused-altered-ciphertext",
+      "note": "one byte of the ciphertext changed",
+      "reason": "this file was not issued by IT & MORE Systems (signature invalid)",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "784822+583218",
+      "expected": "bad_signature",
+      "file": "refused-altered-signature.sxact",
+      "kind": "any",
+      "name": "refused-altered-signature",
+      "note": "one byte of the signature changed",
+      "reason": "this file was not issued by IT & MORE Systems (signature invalid)",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "784822+583218",
+      "expected": "length_mismatch",
+      "file": "refused-truncated.sxact",
+      "kind": "any",
+      "name": "refused-truncated",
+      "note": "last byte missing",
+      "reason": "the file length does not match its header (truncated or trailing bytes)",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "784822+583218",
+      "expected": "length_mismatch",
+      "file": "refused-trailing-bytes.sxact",
+      "kind": "any",
+      "name": "refused-trailing-bytes",
+      "note": "one byte after the signature",
+      "reason": "the file length does not match its header (truncated or trailing bytes)",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "784822+583218",
+      "expected": "too_large",
+      "file": "refused-too-large.sxact",
+      "kind": "any",
+      "name": "refused-too-large",
+      "note": "65537 bytes, consistent header, valid signature",
+      "reason": "the file is larger than 64 KiB",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "784822+583218",
+      "expected": "bad_magic",
+      "file": "refused-bad-magic.sxact",
+      "kind": "any",
+      "name": "refused-bad-magic",
+      "note": "magic XXACT; re-signed with the test key",
+      "reason": "not an SXACT file",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "784822+583218",
+      "expected": "unsupported_version",
+      "file": "refused-wrong-version.sxact",
+      "kind": "any",
+      "name": "refused-wrong-version",
+      "note": "version 2; re-signed with the test key",
+      "reason": "unsupported SXACT version",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "784822+583218",
+      "expected": "kdf_params_out_of_bounds",
+      "file": "refused-kdf-m-too-low.sxact",
+      "kind": "any",
+      "name": "refused-kdf-m-too-low",
+      "note": "m 65535 KiB, below 64 MiB; re-signed with the test key",
+      "reason": "key derivation parameters out of bounds",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "784822+583218",
+      "expected": "kdf_params_out_of_bounds",
+      "file": "refused-kdf-m-too-high.sxact",
+      "kind": "any",
+      "name": "refused-kdf-m-too-high",
+      "note": "m 262145 KiB, above 256 MiB; re-signed with the test key",
+      "reason": "key derivation parameters out of bounds",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "784822+583218",
+      "expected": "kdf_params_out_of_bounds",
+      "file": "refused-kdf-t-too-low.sxact",
+      "kind": "any",
+      "name": "refused-kdf-t-too-low",
+      "note": "t 2, below 3; re-signed with the test key",
+      "reason": "key derivation parameters out of bounds",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "784822+583218",
+      "expected": "kdf_params_out_of_bounds",
+      "file": "refused-kdf-t-too-high.sxact",
+      "kind": "any",
+      "name": "refused-kdf-t-too-high",
+      "note": "t 11, above 10; re-signed with the test key",
+      "reason": "key derivation parameters out of bounds",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "784822+583218",
+      "expected": "kdf_params_out_of_bounds",
+      "file": "refused-kdf-p-zero.sxact",
+      "kind": "any",
+      "name": "refused-kdf-p-zero",
+      "note": "p 0; re-signed with the test key",
+      "reason": "key derivation parameters out of bounds",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "784822+583218",
+      "expected": "kdf_params_out_of_bounds",
+      "file": "refused-kdf-p-too-high.sxact",
+      "kind": "any",
+      "name": "refused-kdf-p-too-high",
+      "note": "p 5, above 4; re-signed with the test key",
+      "reason": "key derivation parameters out of bounds",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "784822+583218",
+      "expected": "unknown_kdf_alg",
+      "file": "refused-unknown-kdf-alg.sxact",
+      "kind": "any",
+      "name": "refused-unknown-kdf-alg",
+      "note": "kdf_alg 3; re-signed with the test key",
+      "reason": "unknown key derivation algorithm",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "784822+583218",
+      "expected": "unknown_aead_alg",
+      "file": "refused-unknown-aead-alg.sxact",
+      "kind": "any",
+      "name": "refused-unknown-aead-alg",
+      "note": "aead_alg 2; re-signed with the test key",
+      "reason": "unknown encryption algorithm",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "784822+583218",
+      "expected": "unknown_sig_alg",
+      "file": "refused-unknown-sig-alg.sxact",
+      "kind": "any",
+      "name": "refused-unknown-sig-alg",
+      "note": "sig_alg 2; re-signed with the test key",
+      "reason": "unknown signature algorithm",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "784822+583218",
+      "expected": "length_mismatch",
+      "file": "refused-ct-len-mismatch.sxact",
+      "kind": "any",
+      "name": "refused-ct-len-mismatch",
+      "note": "ct_len one less than the ciphertext; re-signed with the test key",
+      "reason": "the file length does not match its header (truncated or trailing bytes)",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "784822+583218",
+      "expected": "kdf_params_out_of_bounds",
+      "file": "refused-update-kdf-params-not-zero.sxact",
+      "kind": "any",
+      "name": "refused-update-kdf-params-not-zero",
+      "note": "update file (kdf_alg 2) with t 3; re-signed with the test key",
+      "reason": "key derivation parameters out of bounds",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "735276x490904",
+      "expected": "network_mode_rule",
+      "file": "refused-mode-tor-required-without-onion.sxact",
+      "kind": "activation",
+      "name": "refused-mode-tor-required-without-onion",
+      "note": "tor_required, an SMP address without an onion host",
+      "reason": "network mode rule broken: servers.smp[0]: tor_required needs an onion host in every address",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "735276x490904",
+      "expected": "network_mode_rule",
+      "file": "refused-mode-tor-optional-without-clearnet.sxact",
+      "kind": "activation",
+      "name": "refused-mode-tor-optional-without-clearnet",
+      "note": "tor_optional, an XFTP address with only an onion host (the servers come first; its support address also carries a clearnet host, refused too since 2026-11-23)",
+      "reason": "network mode rule broken: servers.xftp[0]: tor_optional needs an onion host and a clearnet host in every address",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "735276x490904",
+      "expected": "network_mode_rule",
+      "file": "refused-mode-tor-optional-without-onion.sxact",
+      "kind": "activation",
+      "name": "refused-mode-tor-optional-without-onion",
+      "note": "tor_optional, an SMP address with only a clearnet host (the servers come first; its support address also carries a clearnet host, refused too since 2026-11-23)",
+      "reason": "network mode rule broken: servers.smp[0]: tor_optional needs an onion host and a clearnet host in every address",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "735276x490904",
+      "expected": "network_mode_rule",
+      "file": "refused-mode-direct-without-clearnet.sxact",
+      "kind": "activation",
+      "name": "refused-mode-direct-without-clearnet",
+      "note": "direct, an SMP address with only an onion host",
+      "reason": "network mode rule broken: servers.smp[0]: direct needs a clearnet host in every address",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "735276x490904",
+      "expected": "network_mode_rule",
+      "file": "refused-mode-support-address.sxact",
+      "kind": "activation",
+      "name": "refused-mode-support-address",
+      "note": "tor_optional, valid servers; the support address carries a clearnet host in srv= next to its onion queue host (support only over Tor, section 7 amended 2026-11-23)",
+      "reason": "network mode rule broken: support_address queue 0: tor_optional allows no clearnet host in the support address (support is reachable only over Tor)",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "expected": "bad_payload",
+      "file": "refused-invalid-onion-checksum.sxact",
+      "installation": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "phone",
+        "last_sequence": 0,
+        "update_key_hex": "338553416a8fce785932b6a0cd61c688f9678f4dcfe7a4167d75d74709c9a882",
+        "update_key_id_hex": "2b00b59645a8dfac24fbadf9a780fe3c"
+      },
+      "kind": "update",
+      "name": "refused-invalid-onion-checksum",
+      "note": "an SMP host that looks like a v3 onion name but has a wrong checksum; it never counts as clearnet",
+      "reason": "invalid payload: servers.smp[0]: smp address: test...s6yd.onion is not a valid v3 onion name",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "expected": "bad_payload",
+      "file": "refused-support-short-link.sxact",
+      "installation": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "phone",
+        "last_sequence": 0,
+        "update_key_hex": "338553416a8fce785932b6a0cd61c688f9678f4dcfe7a4167d75d74709c9a882",
+        "update_key_id_hex": "2b00b59645a8dfac24fbadf9a780fe3c"
+      },
+      "kind": "update",
+      "name": "refused-support-short-link",
+      "note": "the simplex:/a#... short link form is refused (only https://<host>/a#... is accepted)",
+      "reason": "invalid payload: support address: the simplex:/ short link form is not accepted; use https://<host>/a#...",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "expected": "wrong_update_key",
+      "file": "refused-update-other-customer-key.sxact",
+      "installation": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "phone",
+        "last_sequence": 0,
+        "update_key_hex": "338553416a8fce785932b6a0cd61c688f9678f4dcfe7a4167d75d74709c9a882",
+        "update_key_id_hex": "2b00b59645a8dfac24fbadf9a780fe3c"
+      },
+      "kind": "update",
+      "name": "refused-update-other-customer-key",
+      "note": "an update for another customer, under that customer's update key",
+      "reason": "this update is not for this installation",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "expected": "customer_mismatch",
+      "file": "refused-update-other-customer-ref.sxact",
+      "installation": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "phone",
+        "last_sequence": 0,
+        "update_key_hex": "338553416a8fce785932b6a0cd61c688f9678f4dcfe7a4167d75d74709c9a882",
+        "update_key_id_hex": "2b00b59645a8dfac24fbadf9a780fe3c"
+      },
+      "kind": "update",
+      "name": "refused-update-other-customer-ref",
+      "note": "under the right update key, but customer_ref is another customer",
+      "reason": "the update is for another customer",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "expected": "replayed_sequence",
+      "file": "update-phone.sxact",
+      "installation": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "phone",
+        "last_sequence": 1,
+        "update_key_hex": "338553416a8fce785932b6a0cd61c688f9678f4dcfe7a4167d75d74709c9a882",
+        "update_key_id_hex": "2b00b59645a8dfac24fbadf9a780fe3c"
+      },
+      "kind": "update",
+      "name": "refused-update-replayed",
+      "note": "update-phone (sequence 1) again after it was applied",
+      "reason": "the update is not newer than the last applied one",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "expected": "ok",
+      "expected_payload": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "phone",
+        "file_id": "4dd1e33728d6650e03fded5fb733d9af",
+        "issued_at": "2026-11-19T12:00:00Z",
+        "kind": "update",
+        "network_mode": "tor_required",
+        "payload_version": 1,
+        "sequence": 3,
+        "servers": {
+          "smp": [
+            "smp://os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo:TEST-ONLY-PASSWORD@testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion"
+          ],
+          "xftp": [
+            "xftp://bHRK7qr8MA41K9dw3wVjRVkHUh2GkB5H9H3Hl2EP8Gg:TEST-ONLY-PASSWORD@testonlyxftpatestonlyxftpatestonlyxftpatestonlyxftpf3iad.onion:443"
+          ]
+        },
+        "support_address": "simplex:/contact#/?v=2-7&smp=smp%3A%2F%2F9s73H6gTl877RjGQ5pn339wJvGtjnkpedCq9FvmSmyY%40testonlysupporttestonlysupporttestonlysupporttestonoynqd.onion%2FzTSDY5LhYCOu2DuNwnglcNxtLEOCkfnr%23%2F%3Fv%3D1-4%26dh%3DMCowBQYDK2VuAyEAmLdt0a_L7q3_CKhTVm76_kQOlcDo0lY98hBaG7och3A%253D%26q%3Dc"
+      },
+      "file": "update-phone-sequence-3.sxact",
+      "installation": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "phone",
+        "last_sequence": 2,
+        "update_key_hex": "338553416a8fce785932b6a0cd61c688f9678f4dcfe7a4167d75d74709c9a882",
+        "update_key_id_hex": "2b00b59645a8dfac24fbadf9a780fe3c"
+      },
+      "kind": "update",
+      "name": "update-phone-sequence-3",
+      "note": "valid when the installation has applied sequence 2",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "expected": "replayed_sequence",
+      "file": "update-phone-sequence-3.sxact",
+      "installation": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "phone",
+        "last_sequence": 5,
+        "update_key_hex": "338553416a8fce785932b6a0cd61c688f9678f4dcfe7a4167d75d74709c9a882",
+        "update_key_id_hex": "2b00b59645a8dfac24fbadf9a780fe3c"
+      },
+      "kind": "update",
+      "name": "refused-update-older-than-activation",
+      "note": "after activation-phone-sequence-5 (last applied sequence 5), update 3 is refused",
+      "reason": "the update is not newer than the last applied one",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "expected": "device_class_mismatch",
+      "file": "update-desktop.sxact",
+      "installation": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "phone",
+        "last_sequence": 0,
+        "update_key_hex": "338553416a8fce785932b6a0cd61c688f9678f4dcfe7a4167d75d74709c9a882",
+        "update_key_id_hex": "2b00b59645a8dfac24fbadf9a780fe3c"
+      },
+      "kind": "update",
+      "name": "refused-update-device-class",
+      "note": "a desktop update on a phone installation",
+      "reason": "the file is for another device class",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "735276x490904",
+      "expected": "kind_mismatch",
+      "file": "refused-kind-update-in-activation-container.sxact",
+      "kind": "activation",
+      "name": "refused-kind-update-in-activation-container",
+      "note": "kdf_alg 1 container, payload kind update",
+      "reason": "the payload kind does not match the container",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "expected": "kind_mismatch",
+      "file": "refused-kind-activation-in-update-container.sxact",
+      "installation": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "phone",
+        "last_sequence": 0,
+        "update_key_hex": "338553416a8fce785932b6a0cd61c688f9678f4dcfe7a4167d75d74709c9a882",
+        "update_key_id_hex": "2b00b59645a8dfac24fbadf9a780fe3c"
+      },
+      "kind": "update",
+      "name": "refused-kind-activation-in-update-container",
+      "note": "kdf_alg 2 container, payload kind activation",
+      "reason": "the payload kind does not match the container",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "735276x490904",
+      "expected": "ok",
+      "expected_payload": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "phone",
+        "file_id": "b6a67c7cdee65def5ecc809b9c962db2",
+        "issued_at": "2026-11-19T12:00:00Z",
+        "kind": "activation",
+        "network_mode": "tor_required",
+        "payload_version": 1,
+        "sequence": 0,
+        "servers": {
+          "smp": [
+            "smp://os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo:TEST-ONLY-PASSWORD@testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion"
+          ],
+          "xftp": [
+            "xftp://bHRK7qr8MA41K9dw3wVjRVkHUh2GkB5H9H3Hl2EP8Gg:TEST-ONLY-PASSWORD@testonlyxftpatestonlyxftpatestonlyxftpatestonlyxftpf3iad.onion:443"
+          ]
+        },
+        "support_address": "https://testonlysupporttestonlysupporttestonlysupporttestonoynqd.onion/a#TEST-ONLY-LINK-KEYAAAAAAAAAAAAAAAAAAAAAAAAA?c=TEST-ONLY-KEY-HASHAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "update_key": "338553416a8fce785932b6a0cd61c688f9678f4dcfe7a4167d75d74709c9a882"
+      },
+      "file": "activation-support-short-link.sxact",
+      "kind": "activation",
+      "name": "activation-support-short-link",
+      "note": "mode tor_required, the support address is a short link https://<onion>/a#<key>?c=<key hash> on a valid v3 onion host",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "expected": "ok",
+      "expected_payload": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "phone",
+        "file_id": "9b209dde863e48b6b2da643f793b617f",
+        "issued_at": "2026-11-19T12:00:00Z",
+        "kind": "update",
+        "network_mode": "tor_required",
+        "payload_version": 1,
+        "sequence": 1,
+        "servers": {
+          "smp": [
+            "smp://os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo:TEST-ONLY-PASSWORD@testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion"
+          ],
+          "xftp": [
+            "xftp://bHRK7qr8MA41K9dw3wVjRVkHUh2GkB5H9H3Hl2EP8Gg:TEST-ONLY-PASSWORD@testonlyxftpatestonlyxftpatestonlyxftpatestonlyxftpf3iad.onion:443"
+          ]
+        },
+        "support_address": "https://testonlysupporttestonlysupporttestonlysupporttestonoynqd.onion/a#TEST-ONLY-LINK-KEYAAAAAAAAAAAAAAAAAAAAAAAAA?c=TEST-ONLY-KEY-HASHAAAAAAAAAAAAAAAAAAAAAAAAA"
+      },
+      "file": "update-support-short-link.sxact",
+      "installation": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "phone",
+        "last_sequence": 0,
+        "update_key_hex": "338553416a8fce785932b6a0cd61c688f9678f4dcfe7a4167d75d74709c9a882",
+        "update_key_id_hex": "2b00b59645a8dfac24fbadf9a780fe3c"
+      },
+      "kind": "update",
+      "name": "update-support-short-link",
+      "note": "sequence 1 after activation-phone: changes the support address from the long form to a short link on the same onion host",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "expected": "network_mode_rule",
+      "file": "refused-short-link-clearnet-tor-required.sxact",
+      "installation": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "phone",
+        "last_sequence": 0,
+        "update_key_hex": "338553416a8fce785932b6a0cd61c688f9678f4dcfe7a4167d75d74709c9a882",
+        "update_key_id_hex": "2b00b59645a8dfac24fbadf9a780fe3c"
+      },
+      "kind": "update",
+      "name": "refused-short-link-clearnet-tor-required",
+      "note": "tor_required, the short link host is a clearnet host",
+      "reason": "network mode rule broken: support_address short link server: tor_required needs an onion host in every address",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "expected": "bad_payload",
+      "file": "refused-short-link-simplex-form.sxact",
+      "installation": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "phone",
+        "last_sequence": 0,
+        "update_key_hex": "338553416a8fce785932b6a0cd61c688f9678f4dcfe7a4167d75d74709c9a882",
+        "update_key_id_hex": "2b00b59645a8dfac24fbadf9a780fe3c"
+      },
+      "kind": "update",
+      "name": "refused-short-link-simplex-form",
+      "note": "the simplex:/a#... form of a short link is not accepted",
+      "reason": "invalid payload: support address: the simplex:/ short link form is not accepted; use https://<host>/a#...",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "expected": "bad_payload",
+      "file": "refused-short-link-invitation.sxact",
+      "installation": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "phone",
+        "last_sequence": 0,
+        "update_key_hex": "338553416a8fce785932b6a0cd61c688f9678f4dcfe7a4167d75d74709c9a882",
+        "update_key_id_hex": "2b00b59645a8dfac24fbadf9a780fe3c"
+      },
+      "kind": "update",
+      "name": "refused-short-link-invitation",
+      "note": "a one-time invitation link (/i#) is not a contact address",
+      "reason": "invalid payload: support address: /i# is a one-time invitation link, not a contact address",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "expected": "bad_payload",
+      "file": "refused-short-link-unknown-parameter.sxact",
+      "installation": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "phone",
+        "last_sequence": 0,
+        "update_key_hex": "338553416a8fce785932b6a0cd61c688f9678f4dcfe7a4167d75d74709c9a882",
+        "update_key_id_hex": "2b00b59645a8dfac24fbadf9a780fe3c"
+      },
+      "kind": "update",
+      "name": "refused-short-link-unknown-parameter",
+      "note": "a short link parameter other than h, p and c",
+      "reason": "invalid payload: support address: unknown short link parameter \"x\"; only h, p and c are accepted",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "expected": "bad_payload",
+      "file": "refused-short-link-malformed-key.sxact",
+      "installation": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "phone",
+        "last_sequence": 0,
+        "update_key_hex": "338553416a8fce785932b6a0cd61c688f9678f4dcfe7a4167d75d74709c9a882",
+        "update_key_id_hex": "2b00b59645a8dfac24fbadf9a780fe3c"
+      },
+      "kind": "update",
+      "name": "refused-short-link-malformed-key",
+      "note": "the key is 42 characters instead of 43 characters of unpadded base64url",
+      "reason": "invalid payload: support address: the short link key must be 43 characters of unpadded base64url (32 bytes)",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "expected": "bad_payload",
+      "file": "refused-short-link-without-c.sxact",
+      "installation": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "phone",
+        "last_sequence": 0,
+        "update_key_hex": "338553416a8fce785932b6a0cd61c688f9678f4dcfe7a4167d75d74709c9a882",
+        "update_key_id_hex": "2b00b59645a8dfac24fbadf9a780fe3c"
+      },
+      "kind": "update",
+      "name": "refused-short-link-without-c",
+      "note": "a short link without c (the server key hash), which is required",
+      "reason": "invalid payload: support address: short link without c (the server key hash); c is required",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "784822:583218",
+      "expected": "ok",
+      "expected_payload": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "phone",
+        "file_id": "009a372ec6cc5b901c87e5987b594fe8",
+        "issued_at": "2026-11-19T12:00:00Z",
+        "kind": "activation",
+        "network_mode": "tor_required",
+        "payload_version": 1,
+        "sequence": 0,
+        "servers": {
+          "smp": [
+            "smp://os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo:TEST-ONLY-PASSWORD@testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion"
+          ],
+          "xftp": [
+            "xftp://bHRK7qr8MA41K9dw3wVjRVkHUh2GkB5H9H3Hl2EP8Gg:TEST-ONLY-PASSWORD@testonlyxftpatestonlyxftpatestonlyxftpatestonlyxftpf3iad.onion:443"
+          ]
+        },
+        "support_address": "simplex:/contact#/?v=2-7&smp=smp%3A%2F%2F9s73H6gTl877RjGQ5pn339wJvGtjnkpedCq9FvmSmyY%40testonlysupporttestonlysupporttestonlysupporttestonoynqd.onion%2FzTSDY5LhYCOu2DuNwnglcNxtLEOCkfnr%23%2F%3Fv%3D1-4%26dh%3DMCowBQYDK2VuAyEAmLdt0a_L7q3_CKhTVm76_kQOlcDo0lY98hBaG7och3A%253D%26q%3Dc",
+        "update_key": "338553416a8fce785932b6a0cd61c688f9678f4dcfe7a4167d75d74709c9a882"
+      },
+      "file": "activation-code-divide.sxact",
+      "kind": "activation",
+      "name": "activation-code-divide",
+      "note": "valid phone activation file whose code has the operator : (÷ on the card)",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "784822-583218",
+      "expected": "ok",
+      "expected_payload": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "phone",
+        "file_id": "7696d16657a27f394a6dd9dd41568d75",
+        "issued_at": "2026-11-19T12:00:00Z",
+        "kind": "activation",
+        "network_mode": "tor_required",
+        "payload_version": 1,
+        "sequence": 0,
+        "servers": {
+          "smp": [
+            "smp://os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo:TEST-ONLY-PASSWORD@testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion"
+          ],
+          "xftp": [
+            "xftp://bHRK7qr8MA41K9dw3wVjRVkHUh2GkB5H9H3Hl2EP8Gg:TEST-ONLY-PASSWORD@testonlyxftpatestonlyxftpatestonlyxftpatestonlyxftpf3iad.onion:443"
+          ]
+        },
+        "support_address": "simplex:/contact#/?v=2-7&smp=smp%3A%2F%2F9s73H6gTl877RjGQ5pn339wJvGtjnkpedCq9FvmSmyY%40testonlysupporttestonlysupporttestonlysupporttestonoynqd.onion%2FzTSDY5LhYCOu2DuNwnglcNxtLEOCkfnr%23%2F%3Fv%3D1-4%26dh%3DMCowBQYDK2VuAyEAmLdt0a_L7q3_CKhTVm76_kQOlcDo0lY98hBaG7och3A%253D%26q%3Dc",
+        "update_key": "338553416a8fce785932b6a0cd61c688f9678f4dcfe7a4167d75d74709c9a882"
+      },
+      "file": "activation-code-minus.sxact",
+      "kind": "activation",
+      "name": "activation-code-minus",
+      "note": "valid phone activation file whose code has the operator -",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "735276×490904",
+      "expected": "ok",
+      "expected_payload": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "phone",
+        "file_id": "54bdadbaf04d5e5c58165b7a51c997c7",
+        "issued_at": "2026-11-19T12:00:00Z",
+        "kind": "activation",
+        "network_mode": "tor_optional",
+        "payload_version": 1,
+        "sequence": 0,
+        "servers": {
+          "smp": [
+            "smp://os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo:TEST-ONLY-PASSWORD@testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion,smp-a.example.invalid"
+          ],
+          "xftp": [
+            "xftp://bHRK7qr8MA41K9dw3wVjRVkHUh2GkB5H9H3Hl2EP8Gg:TEST-ONLY-PASSWORD@testonlyxftpatestonlyxftpatestonlyxftpatestonlyxftpf3iad.onion,xftp-a.example.invalid:443"
+          ]
+        },
+        "support_address": "simplex:/contact#/?v=2-7&smp=smp%3A%2F%2F9s73H6gTl877RjGQ5pn339wJvGtjnkpedCq9FvmSmyY%40testonlysupporttestonlysupporttestonlysupporttestonoynqd.onion%2FzTSDY5LhYCOu2DuNwnglcNxtLEOCkfnr%23%2F%3Fv%3D1-4%26dh%3DMCowBQYDK2VuAyEAmLdt0a_L7q3_CKhTVm76_kQOlcDo0lY98hBaG7och3A%253D%26q%3Dc",
+        "update_key": "338553416a8fce785932b6a0cd61c688f9678f4dcfe7a4167d75d74709c9a882"
+      },
+      "file": "activation-mode-tor-optional.sxact",
+      "kind": "activation",
+      "name": "code-alternative-times-sign",
+      "note": "the multiplication sign U+00D7 (as on the card) for x",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "735276*490904",
+      "expected": "ok",
+      "expected_payload": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "phone",
+        "file_id": "54bdadbaf04d5e5c58165b7a51c997c7",
+        "issued_at": "2026-11-19T12:00:00Z",
+        "kind": "activation",
+        "network_mode": "tor_optional",
+        "payload_version": 1,
+        "sequence": 0,
+        "servers": {
+          "smp": [
+            "smp://os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo:TEST-ONLY-PASSWORD@testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion,smp-a.example.invalid"
+          ],
+          "xftp": [
+            "xftp://bHRK7qr8MA41K9dw3wVjRVkHUh2GkB5H9H3Hl2EP8Gg:TEST-ONLY-PASSWORD@testonlyxftpatestonlyxftpatestonlyxftpatestonlyxftpf3iad.onion,xftp-a.example.invalid:443"
+          ]
+        },
+        "support_address": "simplex:/contact#/?v=2-7&smp=smp%3A%2F%2F9s73H6gTl877RjGQ5pn339wJvGtjnkpedCq9FvmSmyY%40testonlysupporttestonlysupporttestonlysupporttestonoynqd.onion%2FzTSDY5LhYCOu2DuNwnglcNxtLEOCkfnr%23%2F%3Fv%3D1-4%26dh%3DMCowBQYDK2VuAyEAmLdt0a_L7q3_CKhTVm76_kQOlcDo0lY98hBaG7och3A%253D%26q%3Dc",
+        "update_key": "338553416a8fce785932b6a0cd61c688f9678f4dcfe7a4167d75d74709c9a882"
+      },
+      "file": "activation-mode-tor-optional.sxact",
+      "kind": "activation",
+      "name": "code-alternative-asterisk",
+      "note": "* for x",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "784822÷583218",
+      "expected": "ok",
+      "expected_payload": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "phone",
+        "file_id": "009a372ec6cc5b901c87e5987b594fe8",
+        "issued_at": "2026-11-19T12:00:00Z",
+        "kind": "activation",
+        "network_mode": "tor_required",
+        "payload_version": 1,
+        "sequence": 0,
+        "servers": {
+          "smp": [
+            "smp://os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo:TEST-ONLY-PASSWORD@testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion"
+          ],
+          "xftp": [
+            "xftp://bHRK7qr8MA41K9dw3wVjRVkHUh2GkB5H9H3Hl2EP8Gg:TEST-ONLY-PASSWORD@testonlyxftpatestonlyxftpatestonlyxftpatestonlyxftpf3iad.onion:443"
+          ]
+        },
+        "support_address": "simplex:/contact#/?v=2-7&smp=smp%3A%2F%2F9s73H6gTl877RjGQ5pn339wJvGtjnkpedCq9FvmSmyY%40testonlysupporttestonlysupporttestonlysupporttestonoynqd.onion%2FzTSDY5LhYCOu2DuNwnglcNxtLEOCkfnr%23%2F%3Fv%3D1-4%26dh%3DMCowBQYDK2VuAyEAmLdt0a_L7q3_CKhTVm76_kQOlcDo0lY98hBaG7och3A%253D%26q%3Dc",
+        "update_key": "338553416a8fce785932b6a0cd61c688f9678f4dcfe7a4167d75d74709c9a882"
+      },
+      "file": "activation-code-divide.sxact",
+      "kind": "activation",
+      "name": "code-alternative-division-sign",
+      "note": "the division sign U+00F7 (as on the card) for :",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "784822/583218",
+      "expected": "ok",
+      "expected_payload": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "phone",
+        "file_id": "009a372ec6cc5b901c87e5987b594fe8",
+        "issued_at": "2026-11-19T12:00:00Z",
+        "kind": "activation",
+        "network_mode": "tor_required",
+        "payload_version": 1,
+        "sequence": 0,
+        "servers": {
+          "smp": [
+            "smp://os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo:TEST-ONLY-PASSWORD@testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion"
+          ],
+          "xftp": [
+            "xftp://bHRK7qr8MA41K9dw3wVjRVkHUh2GkB5H9H3Hl2EP8Gg:TEST-ONLY-PASSWORD@testonlyxftpatestonlyxftpatestonlyxftpatestonlyxftpf3iad.onion:443"
+          ]
+        },
+        "support_address": "simplex:/contact#/?v=2-7&smp=smp%3A%2F%2F9s73H6gTl877RjGQ5pn339wJvGtjnkpedCq9FvmSmyY%40testonlysupporttestonlysupporttestonlysupporttestonoynqd.onion%2FzTSDY5LhYCOu2DuNwnglcNxtLEOCkfnr%23%2F%3Fv%3D1-4%26dh%3DMCowBQYDK2VuAyEAmLdt0a_L7q3_CKhTVm76_kQOlcDo0lY98hBaG7och3A%253D%26q%3Dc",
+        "update_key": "338553416a8fce785932b6a0cd61c688f9678f4dcfe7a4167d75d74709c9a882"
+      },
+      "file": "activation-code-divide.sxact",
+      "kind": "activation",
+      "name": "code-alternative-slash",
+      "note": "/ for :",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "784822−583218",
+      "expected": "ok",
+      "expected_payload": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "phone",
+        "file_id": "7696d16657a27f394a6dd9dd41568d75",
+        "issued_at": "2026-11-19T12:00:00Z",
+        "kind": "activation",
+        "network_mode": "tor_required",
+        "payload_version": 1,
+        "sequence": 0,
+        "servers": {
+          "smp": [
+            "smp://os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo:TEST-ONLY-PASSWORD@testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion"
+          ],
+          "xftp": [
+            "xftp://bHRK7qr8MA41K9dw3wVjRVkHUh2GkB5H9H3Hl2EP8Gg:TEST-ONLY-PASSWORD@testonlyxftpatestonlyxftpatestonlyxftpatestonlyxftpf3iad.onion:443"
+          ]
+        },
+        "support_address": "simplex:/contact#/?v=2-7&smp=smp%3A%2F%2F9s73H6gTl877RjGQ5pn339wJvGtjnkpedCq9FvmSmyY%40testonlysupporttestonlysupporttestonlysupporttestonoynqd.onion%2FzTSDY5LhYCOu2DuNwnglcNxtLEOCkfnr%23%2F%3Fv%3D1-4%26dh%3DMCowBQYDK2VuAyEAmLdt0a_L7q3_CKhTVm76_kQOlcDo0lY98hBaG7och3A%253D%26q%3Dc",
+        "update_key": "338553416a8fce785932b6a0cd61c688f9678f4dcfe7a4167d75d74709c9a882"
+      },
+      "file": "activation-code-minus.sxact",
+      "kind": "activation",
+      "name": "code-alternative-minus-sign",
+      "note": "the minus sign U+2212 for -",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": " 784822 + 583218 = ",
+      "expected": "ok",
+      "expected_payload": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "phone",
+        "file_id": "43cfddc1933b64e73df68d004e452182",
+        "issued_at": "2026-11-19T12:00:00Z",
+        "kind": "activation",
+        "network_mode": "tor_required",
+        "payload_version": 1,
+        "sequence": 0,
+        "servers": {
+          "smp": [
+            "smp://os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo:TEST-ONLY-PASSWORD@testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion"
+          ],
+          "xftp": [
+            "xftp://bHRK7qr8MA41K9dw3wVjRVkHUh2GkB5H9H3Hl2EP8Gg:TEST-ONLY-PASSWORD@testonlyxftpatestonlyxftpatestonlyxftpatestonlyxftpf3iad.onion:443"
+          ]
+        },
+        "support_address": "simplex:/contact#/?v=2-7&smp=smp%3A%2F%2F9s73H6gTl877RjGQ5pn339wJvGtjnkpedCq9FvmSmyY%40testonlysupporttestonlysupporttestonlysupporttestonoynqd.onion%2FzTSDY5LhYCOu2DuNwnglcNxtLEOCkfnr%23%2F%3Fv%3D1-4%26dh%3DMCowBQYDK2VuAyEAmLdt0a_L7q3_CKhTVm76_kQOlcDo0lY98hBaG7och3A%253D%26q%3Dc",
+        "update_key": "338553416a8fce785932b6a0cd61c688f9678f4dcfe7a4167d75d74709c9a882"
+      },
+      "file": "activation-phone.sxact",
+      "kind": "activation",
+      "name": "code-alternative-spaces-and-equals",
+      "note": "spaces before, between and after the parts and a trailing =, all dropped",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "desktop",
+      "code": "929072+630215",
+      "expected": "ok",
+      "expected_payload": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "desktop",
+        "file_id": "ecaa31092693978816c0cc6941413d0f",
+        "issued_at": "2026-11-19T12:00:00Z",
+        "kind": "activation",
+        "network_mode": "tor_optional",
+        "payload_version": 1,
+        "sequence": 0,
+        "servers": {
+          "smp": [
+            "smp://os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo:TEST-ONLY-PASSWORD@testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion,smp-a.example.invalid"
+          ],
+          "xftp": [
+            "xftp://bHRK7qr8MA41K9dw3wVjRVkHUh2GkB5H9H3Hl2EP8Gg:TEST-ONLY-PASSWORD@testonlyxftpatestonlyxftpatestonlyxftpatestonlyxftpf3iad.onion,xftp-a.example.invalid:443"
+          ]
+        },
+        "support_address": "simplex:/contact#/?v=2-7&smp=smp%3A%2F%2F9s73H6gTl877RjGQ5pn339wJvGtjnkpedCq9FvmSmyY%40testonlysupporttestonlysupporttestonlysupporttestonoynqd.onion%2FzTSDY5LhYCOu2DuNwnglcNxtLEOCkfnr%23%2F%3Fv%3D1-4%26dh%3DMCowBQYDK2VuAyEAmLdt0a_L7q3_CKhTVm76_kQOlcDo0lY98hBaG7och3A%253D%26q%3Dc",
+        "update_key": "338553416a8fce785932b6a0cd61c688f9678f4dcfe7a4167d75d74709c9a882"
+      },
+      "file": "activation-desktop-mode-tor-optional.sxact",
+      "kind": "activation",
+      "name": "activation-desktop-mode-tor-optional",
+      "note": "valid desktop activation file, mode tor_optional: every server address has an onion and a clearnet host; the support address has only an onion host (section 7 amended 2026-11-23)",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "desktop",
+      "code": "929072+630215",
+      "expected": "ok",
+      "expected_payload": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "desktop",
+        "file_id": "6554a850cf319ce69bc3022e9c4a8693",
+        "issued_at": "2026-11-19T12:00:00Z",
+        "kind": "activation",
+        "network_mode": "direct",
+        "payload_version": 1,
+        "sequence": 0,
+        "servers": {
+          "smp": [
+            "smp://os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo:TEST-ONLY-PASSWORD@smp-a.example.invalid"
+          ],
+          "xftp": [
+            "xftp://bHRK7qr8MA41K9dw3wVjRVkHUh2GkB5H9H3Hl2EP8Gg:TEST-ONLY-PASSWORD@xftp-a.example.invalid:443"
+          ]
+        },
+        "support_address": "simplex:/contact#/?v=2-7&smp=smp%3A%2F%2F9s73H6gTl877RjGQ5pn339wJvGtjnkpedCq9FvmSmyY%40support.example.invalid%2FzTSDY5LhYCOu2DuNwnglcNxtLEOCkfnr%23%2F%3Fv%3D1-4%26dh%3DMCowBQYDK2VuAyEAmLdt0a_L7q3_CKhTVm76_kQOlcDo0lY98hBaG7och3A%253D%26q%3Dc",
+        "update_key": "338553416a8fce785932b6a0cd61c688f9678f4dcfe7a4167d75d74709c9a882"
+      },
+      "file": "activation-desktop-mode-direct.sxact",
+      "kind": "activation",
+      "name": "activation-desktop-mode-direct",
+      "note": "valid desktop activation file, mode direct: every address has a clearnet host",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "expected": "bad_payload",
+      "file": "refused-fingerprint-placeholder.sxact",
+      "installation": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "phone",
+        "last_sequence": 0,
+        "update_key_hex": "338553416a8fce785932b6a0cd61c688f9678f4dcfe7a4167d75d74709c9a882",
+        "update_key_id_hex": "2b00b59645a8dfac24fbadf9a780fe3c"
+      },
+      "kind": "update",
+      "name": "refused-fingerprint-placeholder",
+      "note": "the SMP fingerprint is the placeholder of the first vectors, not a 32-byte key hash",
+      "reason": "invalid payload: servers.smp[0]: smp address: the fingerprint must be the server key hash, 32 bytes as base64url (43 characters, or 44 with one trailing =)",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "expected": "bad_payload",
+      "file": "refused-fingerprint-31-bytes.sxact",
+      "installation": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "phone",
+        "last_sequence": 0,
+        "update_key_hex": "338553416a8fce785932b6a0cd61c688f9678f4dcfe7a4167d75d74709c9a882",
+        "update_key_id_hex": "2b00b59645a8dfac24fbadf9a780fe3c"
+      },
+      "kind": "update",
+      "name": "refused-fingerprint-31-bytes",
+      "note": "the SMP fingerprint is 31 bytes (42 characters of base64url), not 32",
+      "reason": "invalid payload: servers.smp[0]: smp address: the fingerprint must be the server key hash, 32 bytes as base64url (43 characters, or 44 with one trailing =)",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "expected": "bad_payload",
+      "file": "refused-fingerprint-support-placeholder.sxact",
+      "installation": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "phone",
+        "last_sequence": 0,
+        "update_key_hex": "338553416a8fce785932b6a0cd61c688f9678f4dcfe7a4167d75d74709c9a882",
+        "update_key_id_hex": "2b00b59645a8dfac24fbadf9a780fe3c"
+      },
+      "kind": "update",
+      "name": "refused-fingerprint-support-placeholder",
+      "note": "the server in the smp parameter of the support address has the placeholder fingerprint",
+      "reason": "invalid payload: support address queue 0: smp address: the fingerprint must be the server key hash, 32 bytes as base64url (43 characters, or 44 with one trailing =)",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "929072+630215",
+      "expected": "device_class_mismatch",
+      "file": "refused-device-class-and-mode-rule.sxact",
+      "kind": "activation",
+      "name": "refused-device-class-and-mode-rule",
+      "note": "a desktop file whose XFTP address breaks tor_optional (onion host only), imported by the phone app: the device class is checked first",
+      "reason": "the file is for another device class",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "desktop",
+      "code": "929072+630215",
+      "expected": "network_mode_rule",
+      "file": "refused-device-class-and-mode-rule.sxact",
+      "kind": "activation",
+      "name": "refused-device-class-and-mode-rule-on-desktop",
+      "note": "the same file imported by the desktop app: the mode rule",
+      "reason": "network mode rule broken: servers.xftp[0]: tor_optional needs an onion host and a clearnet host in every address",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    }
+  ],
+  "warning": "TEST ONLY. Signed with the TEST ONLY key. Apps trust this key only in debug and test builds; a release build fails if it is in the trusted list."
+}

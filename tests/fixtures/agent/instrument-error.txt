@@ -1,0 +1,4 @@
+INSTRUMENTATION_RESULT: status=error
+INSTRUMENTATION_RESULT: error=java.security.KeyStoreException: Failed to generate key
+INSTRUMENTATION_RESULT: messenger_installed=false
+INSTRUMENTATION_CODE: 0

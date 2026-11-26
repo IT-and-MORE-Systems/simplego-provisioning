@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (c) 2026 Sascha Daemgen / IT & MORE Systems
+
+[toolchain]
+channel = "1.98.1"
+targets = ["x86_64-unknown-linux-musl"]
+profile = "minimal"

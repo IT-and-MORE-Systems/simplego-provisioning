@@ -1,0 +1,9 @@
+(bootloader) version-bootloader:ripcurrent-16.3-00000000
+(bootloader) product:shiba
+(bootloader) serialno:XXXXXXXXXXE5
+(bootloader) secure:yes
+(bootloader) unlocked:no
+(bootloader) current-slot:a
+(bootloader) off-mode-charge:1
+all: Done!!
+Finished. Total time: 0.012s

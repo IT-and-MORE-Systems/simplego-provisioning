@@ -1,0 +1,44 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# gitleaks configuration: the default rules, with two narrow exceptions for
+# test material that is public by design. Nothing else is allowed.
+
+title = "simplego-provisioning"
+
+[extend]
+useDefault = true
+
+# The TEST ONLY activation signing key that signs the test vectors
+# (Ed25519, SHA256:t1Ep7dvjgQ5iXAYLCUakRzwv4eJ0TvnC+y6xXTgp21U, comment
+# "TEST ONLY, never trusted in release builds"). sxprov refuses it for
+# issuing by its key id. Allowed only at its two paths and only with this
+# key's own content (the start of each file, which holds this key's public
+# key and salt), so another key at the same path is still reported.
+[[allowlists]]
+description = "TEST ONLY activation signing key of the test vectors"
+targetRules = ["private-key"]
+condition = "AND"
+paths = [
+  '''^tests/fixtures/sxact/keys/sxact-TEST-ONLY-signing-key(-encrypted)?$''',
+]
+regexTarget = "match"
+regexes = [
+  '''b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW\s*QyNTUxOQAAACB\+Yy\+e2IwQLTXrCHOIzcdgG5yfcNJLuBySH8ItZRpR1AAAALDco2lb3KNp''',
+  '''b3BlbnNzaC1rZXktdjEAAAAACmFlczI1Ni1jdHIAAAAGYmNyeXB0AAAAGAAAABB72vuiOZ\s*PYgBUBYn5VnbcuAAAAGAAAAAEAAAAzAAAAC3NzaC1lZDI1NTE5AAAAIH5jL57YjBAtNesI''',
+]
+
+# The synthetic update keys of the test vectors (64 hex digits, generated
+# deterministically by src/activation/vectors.rs from a seeded test
+# generator). Allowed only in vectors.json and only in its update_key and
+# update_key_hex fields.
+[[allowlists]]
+description = "Synthetic update keys of the TEST ONLY vectors"
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = [
+  '''^tests/fixtures/sxact/vectors\.json$''',
+]
+regexTarget = "line"
+regexes = [
+  '''^\s*"update_key(_hex)?": "[0-9a-f]{64}",?$''',
+]

@@ -1,0 +1,61 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (c) 2026 Sascha Daemgen / IT & MORE Systems
+#
+# Build and test on every push and pull request. No secrets are needed: the
+# tests run against the fake adb, never a phone, and the agent is not built.
+
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rust:
+    name: fmt, clippy, tests, musl release build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Toolchain (rust-toolchain.toml) and musl
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends musl-tools
+          rustup show active-toolchain || rustup toolchain install
+          rustup component add rustfmt clippy
+          rustup target add x86_64-unknown-linux-musl
+          rustc --version
+          cargo --version
+
+      - name: Fetch the locked dependencies
+        run: cargo fetch --locked
+
+      - name: Format
+        run: cargo fmt --check
+
+      - name: Clippy
+        run: cargo clippy --locked --offline --all-targets -- -D warnings
+
+      - name: Tests
+        run: cargo test --locked --offline
+
+      - name: Third-party notices are current
+        run: python3 -I tools/third_party_notices.py --check
+
+      - name: Release build (static, musl)
+        env:
+          RUSTFLAGS: --remap-path-prefix=${{ github.workspace }}=.
+        run: |
+          cargo build --locked --offline --release --bin sxprov --target x86_64-unknown-linux-musl
+          file target/x86_64-unknown-linux-musl/release/sxprov
+          ./target/x86_64-unknown-linux-musl/release/sxprov --version

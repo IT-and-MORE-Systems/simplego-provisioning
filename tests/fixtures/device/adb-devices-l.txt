@@ -1,0 +1,6 @@
+List of devices attached
+XXXXXXXXXXA1           device usb:1-2 product:shiba model:Pixel_8 device:shiba transport_id:3
+XXXXXXXXXXB2           unauthorized usb:1-3 transport_id:4
+XXXXXXXXXXC3           offline transport_id:5
+XXXXXXXXXXD4           no permissions (missing udev rules?); see [http://developer.android.com/tools/device.html] usb:1-4 transport_id:6
+

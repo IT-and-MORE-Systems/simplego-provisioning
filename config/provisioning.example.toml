@@ -1,0 +1,118 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (c) 2026 Sascha Daemgen / IT & MORE Systems
+#
+# SimpleGo Provisioning (sxprov) configuration template. Copy to
+# config/provisioning.toml (git-ignored) or point SXPROV_CONFIG / --config at
+# another file. Placeholders only: this file holds no secret, and the copy
+# must not hold one either.
+
+# SHA-256 (64 hex digits) of the attestation agent signing certificate.
+# Pinned through attestationApplicationId. Print it with:
+#   sxprov apk inspect <agent.apk>   (or apksigner verify --print-certs)
+agent_signing_cert_sha256 = "REPLACE_WITH_AGENT_CERT_SHA256"
+
+# Package name of the attestation agent.
+agent_package = "dev.simplego.provisioning.agent"
+
+# Path to the signed agent APK on this machine.
+agent_apk = "/path/to/sxprov-agent.apk"
+
+# The messenger. Each delivery takes its package name from the messenger APK
+# and the record keeps it; `verify` and `devices` take it from
+# --messenger-package. Optional:
+#   messenger_package: one fixed package for every delivery;
+#   messenger_package_pattern: every delivered package must match it (`*`
+#     stands for any run of package name characters, e.g. "org.example.*").
+# messenger_package = "org.example.messenger"
+# messenger_package_pattern = "org.example.*"
+# Authority of the messenger's activation provider; {package} is the
+# delivered package.
+messenger_provider_authority = "{package}.activation"
+# The messenger's signing certificate SHA-256. While it is empty, deliveries
+# need --accept-unverified-messenger and the signature is UNVERIFIED.
+messenger_signing_cert_sha256 = ""
+
+# Lists placed by hand (no Tor): put them in the local folder outside the
+# repository and run `sxprov trust import DIR`, for example
+#   trust import /mnt/c/Users/REPLACE_USER/.simplego-provisioning/manual-trust
+
+# Tor SOCKS proxy for `sxprov trust refresh`. Must be socks5h:// (DNS via Tor).
+# There is no clearnet fallback.
+tor_socks_proxy = "socks5h://127.0.0.1:9050"
+
+# Trust cache directory (outside the repository).
+trust_cache_dir = "/home/REPLACE_USER/.local/share/sxprov/trust"
+
+# Google revocation list: older than this many days needs operator confirmation.
+revocation_max_age_days = 7
+
+# GrapheneOS verified boot key list: older than this many days shows a warning.
+grapheneos_keys_warn_age_days = 90
+
+# adb and fastboot from the admin machine (not bundled).
+# On WSL2 with the phone attached to Windows, use the Windows adb, for
+# example "/mnt/c/Users/REPLACE_USER/AppData/Local/Android/Sdk/platform-tools/adb.exe".
+# An empty fastboot_path disables fastboot: no fastboot command is run.
+adb_path = "adb"
+fastboot_path = "fastboot"
+
+# Encrypted admin store: per-customer update keys, last sequence and the
+# fleet log of issued activation and update files. Created with
+# `sxprov store init`. Never inside a repository (refused). Default:
+#   ~/.local/share/sxprov/admin-store.sxdb
+# admin_store_path = "/home/REPLACE_USER/.local/share/sxprov/admin-store.sxdb"
+
+# Delivery (`sxprov deliver`). The system calculator hidden at delivery; on
+# phones with another calculator package, that name.
+system_calculator_package = "com.android.calculator2"
+
+# Orbot, installed with `deliver --orbot-apk` until the messenger carries Tor
+# itself. Its signing certificate SHA-256, read with
+# `sxprov apk inspect` and compared with a fingerprint the Guardian Project
+# publishes. Empty: `--orbot-apk` is refused.
+orbot_package = "org.torproject.android"
+orbot_signing_cert_sha256 = ""
+
+# Only in a throwaway test config for the operator's own test phones:
+# lets `deliver --test-delivery` sign with the TEST ONLY key. Never in the
+# config of real deliveries.
+# allow_test_key_for_test_deliveries = false
+
+# GrapheneOS (sxprov os status, os fetch, flash). Everything over Tor only.
+# Channel files and factory images come from here (HTTPS, no trailing slash).
+grapheneos_release_base = "https://releases.grapheneos.org"
+# Release channel: stable, beta or alpha.
+grapheneos_channel = "stable"
+# Which build counts as current and is flashed by default: newest (the
+# security preview build when there is one) or stable (the release only).
+grapheneos_release = "newest"
+# Channel files and verified factory images (about 2 GB per image, 4.6 GB
+# more while flashing). On WSL with the Windows fastboot.exe it must be on a
+# Windows drive. Default: ~/.cache/simplego-provisioning/grapheneos
+# grapheneos_cache_dir = "/mnt/c/Users/REPLACE_USER/sxprov-grapheneos-cache"
+# deliver refuses a phone more than this many days behind the stable channel
+# (unless --allow-outdated-os).
+max_os_age_days = 30
+# Logs of the flash script (serials masked). Default: logs in the cache folder.
+# flash_log_dir = "/home/REPLACE_USER/sxprov-flash-logs"
+# How long flash waits for the bootloader unlock and lock to be confirmed on
+# the phone, in seconds (60 to 86400).
+flash_confirm_timeout_secs = 900
+
+# A download over Tor that receives no byte for this many seconds continues
+# on a new Tor circuit, at most 3 attempts (10 to 3600).
+download_idle_timeout_secs = 120
+
+# The normal SimpleX app at delivery (deliver --fdroid-apk), from SimpleX's
+# own F-Droid repository, with the F-Droid client. The defaults are the
+# values confirmed from two official sources on 2026-11-24; an empty pin
+# refuses the step.
+fdroid_package = "org.fdroid.fdroid"
+fdroid_signing_cert_sha256 = "43238d512c1e5eb2d6569f4a3afbf5523418b82e0a3ed1552770abb9a9c9ccab"
+simplex_repo_url = "https://app.simplex.chat/fdroid/repo"
+simplex_repo_fingerprint = "9f358ff284d1f71656a2bfaf0e005deae6aa14143720e089f11ff2ddcfeb01ba"
+simplex_app_package = "chat.simplex.app"
+simplex_app_signing_cert_sha256 = "3c52c4fd3cad1c07c9b00a7080e358fab9fefcb8af5aec147765f16d0f21ad85"
+# How long deliver waits for SimpleX's repository in the F-Droid client
+# (fetched over Tor), in seconds (60 to 3600).
+fdroid_repo_wait_secs = 600

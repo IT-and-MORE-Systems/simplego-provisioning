@@ -1,0 +1,74 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# Nothing that can hold a secret or customer data is ever committed. The
+# files named below are local on purpose.
+
+# Rust build output
+target/
+
+# Local configuration (pins, paths, the Tor proxy; may name the store and
+# keys). Copy config/provisioning.example.toml.
+config/provisioning.toml
+*.local.toml
+
+# The encrypted admin store (update keys, fleet records), its backup and lock
+*.sxdb
+*.sxdb.bak
+*.sxdb.lock
+
+# Activation and update files issued for customers. Committed exception:
+# the TEST ONLY vectors.
+*.sxact
+!tests/fixtures/sxact/*.sxact
+
+# Activation signing keys (OpenSSH), update key files, passphrase files.
+# Committed exception: the TEST ONLY key pair of the vectors.
+*signing-key*
+!tests/fixtures/sxact/keys/sxact-TEST-ONLY-signing-key*
+*.updatekey
+*.pass
+*passphrase*
+
+# Customers' servers and support address files
+servers*.txt
+support*.txt
+
+# Keystores and signing values of the agent
+*.jks
+*.keystore
+*.p12
+*.pfx
+signing.properties
+agent-signing.properties
+
+# PEM files are private by default. Committed exceptions: the public trust
+# roots, and public test chains whose source and licence are recorded next to
+# them (tests/fixtures/chains/SOURCE.md) and that carry no device identifiers.
+*.pem
+!trust/**/*.pem
+!tests/fixtures/**/*.pem
+
+# Data recorded from real phones (chains, serials, outputs): never committed
+tests/fixtures/local/
+
+# Built test packages, downloaded APKs, GrapheneOS images and logs
+dist/
+*.apk
+logs/
+
+# Android and Gradle (agent)
+local.properties
+.gradle/
+build/
+agent/build/
+
+# Local working notes of the maintainers
+.sentinelx/
+CLAUDE.local.md
+
+# IDE and OS files
+.idea/
+*.iml
+.vscode/
+.DS_Store
+Thumbs.db
