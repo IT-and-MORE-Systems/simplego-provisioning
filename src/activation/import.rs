@@ -6,6 +6,7 @@
 
 use super::code::Code;
 use super::container::{parse, KDF_ARGON2ID, KDF_UPDATE_KEY};
+use super::features::Features;
 use super::keys::TrustedKey;
 use super::payload::{DeviceClass, Kind, Payload, RawPayload};
 use super::Refusal;
@@ -18,6 +19,8 @@ pub struct Install {
     pub customer_ref: String,
     pub update_key: Zeroizing<[u8; 32]>,
     pub last_sequence: u64,
+    /// The installed feature profile (section 12.1), `None` without one.
+    pub features: Option<Features>,
 }
 
 // Used by the tests and vectors; the apps implement the same steps.
@@ -33,14 +36,20 @@ impl Install {
                 .update_key_bytes()
                 .ok_or_else(|| Refusal::BadPayload("update_key".into()))?,
             last_sequence: p.sequence,
+            features: p.features.clone(),
         })
     }
 
-    /// Section 6 update step 7.
+    /// Section 6 update step 7. An update without `features` leaves the
+    /// installed profile unchanged; with `features` it replaces the whole
+    /// profile (section 12.4).
     pub fn apply(&mut self, p: &Payload) {
         self.last_sequence = p.sequence;
         if let Some(k) = p.update_key_bytes() {
             self.update_key = k;
+        }
+        if let Some(f) = &p.features {
+            self.features = Some(f.clone());
         }
     }
 }
@@ -65,6 +74,7 @@ pub fn import_activation(
     if raw.device_class != device_class {
         return Err(Refusal::DeviceClassMismatch);
     }
+    raw.check_class_rules()?;
     let p = raw.into_payload()?;
     p.check_addresses()?;
     Ok(p)
@@ -94,6 +104,7 @@ pub fn import_update(
     if raw.sequence <= install.last_sequence {
         return Err(Refusal::ReplayedSequence);
     }
+    raw.check_class_rules()?;
     let p = raw.into_payload()?;
     p.check_addresses()?;
     Ok(p)
@@ -117,6 +128,7 @@ mod tests {
             customer_ref: "TEST-CUSTOMER-0001".into(),
             update_key: Zeroizing::new(key),
             last_sequence: 0,
+            features: None,
         };
         let file = |seq: u64, new_key: Option<[u8; 32]>| {
             let mut p = sample(Kind::Update, NetworkMode::TorRequired);

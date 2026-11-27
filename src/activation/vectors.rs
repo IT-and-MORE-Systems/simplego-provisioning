@@ -14,7 +14,10 @@
 
 use super::code::Code;
 use super::container::{assemble, build_activation, build_update, update_key_id, Header};
-use super::hosts::tests::{fake43, fake_onion, key_hash, long_support, short_link};
+use super::directory::{Directory, DirectoryGroup, Role};
+use super::features::{FeatureValue, Features};
+use super::hosts::tests::{fake43, fake_onion, group_link_on, key_hash, long_support, short_link};
+use super::hosts::{parse_server, ServerAddress};
 use super::import::{import_activation, import_update, Install};
 use super::keys::{KeyFile, Signer, TrustedKey};
 use super::payload::{DeviceClass, Kind, NetworkMode, Payload, Servers};
@@ -154,6 +157,8 @@ impl Gen {
             support_address,
             update_key: key.map(|k| hex(k)),
             sequence,
+            features: None,
+            directory: None,
         }
     }
 
@@ -170,16 +175,36 @@ impl Gen {
     }
 
     fn activation_file(&mut self, name: &str, p: &Payload, code: &Code) {
+        self.activation_file_raw(name, &p.to_json(), code);
+    }
+
+    /// An activation file from payload bytes (for payloads the `Payload`
+    /// type cannot hold: unknown names, duplicate keys).
+    fn activation_file_raw(&mut self, name: &str, json: &[u8], code: &Code) {
         let salt = bytes(&mut self.rng).unwrap();
         let nonce = bytes(&mut self.rng).unwrap();
-        let f = build_activation(&p.to_json(), code, salt, nonce, &self.test).unwrap();
+        let f = build_activation(json, code, salt, nonce, &self.test).unwrap();
         self.add_file(name, f);
     }
 
     fn update_file(&mut self, name: &str, p: &Payload, key: &[u8; 32]) {
+        self.update_file_raw(name, &p.to_json(), key);
+    }
+
+    fn update_file_raw(&mut self, name: &str, json: &[u8], key: &[u8; 32]) {
         let nonce = bytes(&mut self.rng).unwrap();
-        let f = build_update(&p.to_json(), key, nonce, &self.test).unwrap();
+        let f = build_update(json, key, nonce, &self.test).unwrap();
         self.add_file(name, f);
+    }
+
+    /// Section 12.1: the status values the app reports after the import,
+    /// for an accepted vector whose installation then has a profile.
+    fn expect_features(&mut self, features: Option<&Features>) {
+        if let Some(f) = features {
+            let v = self.vectors.last_mut().unwrap();
+            v["expected_features_profile"] = json!(f.profile());
+            v["expected_features_fixed"] = json!(f.fixed());
+        }
     }
 
     /// Re-signs the file with a changed header (the test key signs, so the
@@ -215,6 +240,7 @@ impl Gen {
     ) {
         let data = self.file(file);
         let got = import_activation(&data, &self.trusted, code, app_class);
+        let installed = got.as_ref().ok().and_then(|p| p.features.clone());
         let mut v = json!({
             "name": name, "file": file, "kind": "activation",
             "trusted_public_key_hex": hex(&self.test.public()),
@@ -222,6 +248,7 @@ impl Gen {
         });
         check(&mut v, got, &expect);
         self.vectors.push(v);
+        self.expect_features(installed.as_ref());
     }
 
     fn update_vector(
@@ -234,6 +261,12 @@ impl Gen {
     ) {
         let data = self.file(file);
         let got = import_update(&data, &self.trusted, install);
+        // The profile after the update (12.4: without features unchanged).
+        let installed = got.as_ref().ok().and_then(|p| {
+            let mut after = install.clone();
+            after.apply(p);
+            after.features
+        });
         let mut v = json!({
             "name": name, "file": file, "kind": "update",
             "trusted_public_key_hex": hex(&self.test.public()),
@@ -244,8 +277,13 @@ impl Gen {
             },
             "note": note,
         });
+        if let Some(f) = &install.features {
+            v["installation"]["features"] = json!(f);
+            v["installation"]["features_profile"] = json!(f.profile());
+        }
         check(&mut v, got, &expect);
         self.vectors.push(v);
+        self.expect_features(installed.as_ref());
     }
 
     /// A structure refusal: the result does not depend on code or state.
@@ -310,6 +348,7 @@ fn generate() -> (Vec<(String, Vec<u8>)>, String) {
         customer_ref: CUSTOMER.into(),
         update_key: Zeroizing::new(*key),
         last_sequence: seq,
+        features: None,
     };
 
     // Valid activation files.
@@ -1109,8 +1148,10 @@ fn generate() -> (Vec<(String, Vec<u8>)>, String) {
         "the same file imported by the desktop app: the mode rule",
     );
 
+    section_12(&mut g, &key1, &code_misc, &code_desktop);
+
     let doc = json!({
-        "format": "SXACT version 1 (activation-file-format.md, version 1 with the amendments of 2026-11-19 23:10, 2026-11-21 00:41, 2026-11-21 10:30 and 2026-11-21 11:00)",
+        "format": "SXACT version 1 (activation-file-format.md, version 1 with the amendments of 2026-11-19 23:10, 2026-11-21 00:41, 2026-11-21 10:30, 2026-11-21 11:00 and 2026-11-23, and section 12 of 2026-11-27 with 12.4)",
         "warning": "TEST ONLY. Signed with the TEST ONLY key. Apps trust this key only in debug and test builds; a release build fails if it is in the trusted list.",
         "test_key": {
             "public_key_hex": hex(&g.test.public()),
@@ -1122,6 +1163,434 @@ fn generate() -> (Vec<(String, Vec<u8>)>, String) {
     });
     let text = format!("{}\n", serde_json::to_string_pretty(&doc).unwrap());
     (g.files, text)
+}
+
+fn features(pairs: &[(&str, FeatureValue)]) -> Features {
+    let mut f = Features {
+        profile_version: 1,
+        ..Features::default()
+    };
+    for (n, v) in pairs {
+        let v = Some(*v);
+        match *n {
+            "groups" => f.groups = v,
+            "channels" => f.channels = v,
+            "preset_servers" => f.preset_servers = v,
+            "calls" => f.calls = v,
+            "files" => f.files = v,
+            "voice_messages" => f.voice_messages = v,
+            "calculator_disguise" => f.calculator_disguise = v,
+            "laptop_link" => f.laptop_link = v,
+            "developer_tools" => f.developer_tools = v,
+            "vault" => f.vault = v,
+            _ => panic!("{n}"),
+        }
+    }
+    f
+}
+
+/// A payload as JSON, changed by `f` (names and values the types refuse).
+fn json_with(p: &Payload, f: impl FnOnce(&mut Value)) -> Vec<u8> {
+    let mut v: Value = serde_json::from_slice(&p.to_json()).unwrap();
+    f(&mut v);
+    serde_json::to_vec(&v).unwrap()
+}
+
+/// A directory of synthetic names whose group links are on `server`.
+fn directory(server: &ServerAddress, role: Role, groups: &[(&str, bool)]) -> Directory {
+    Directory {
+        directory_version: 1,
+        set_id: String::new(),
+        display_name: "TEST Anna Müller-Groß".into(),
+        role,
+        groups: groups
+            .iter()
+            .enumerate()
+            .map(|(i, (name, direct))| DirectoryGroup {
+                name: name.to_string(),
+                link: group_link_on(server, &format!("TEST-ONLY-GROUP-LINK-KEY-{}", i + 1)),
+                direct_contacts: *direct,
+            })
+            .collect(),
+    }
+}
+
+/// Section 12 (feature profile and customer directory, 2026-11-27, with
+/// the amendments of 12.4). Generated after every earlier file, so the
+/// seeded sequence, and with it every earlier file, is unchanged.
+fn section_12(g: &mut Gen, key1: &[u8; 32], code_misc: &Code, code_desktop: &Code) {
+    use DeviceClass::*;
+    use Expect::*;
+    use FeatureValue::*;
+    use NetworkMode::*;
+    let (cm, cd) = (canon(code_misc), canon(code_desktop));
+    let install = |class: DeviceClass, seq: u64, f: Option<Features>| Install {
+        device_class: class,
+        customer_ref: CUSTOMER.into(),
+        update_key: Zeroizing::new(*key1),
+        last_sequence: seq,
+        features: f,
+    };
+    // Every switch, every value: the desktop-only switches off or ask in
+    // the phone file, on in the desktop file.
+    let phone_full = features(&[
+        ("groups", Off),
+        ("channels", Off),
+        ("preset_servers", Off),
+        ("calls", On),
+        ("files", On),
+        ("voice_messages", Ask),
+        ("calculator_disguise", On),
+        ("laptop_link", Off),
+        ("developer_tools", Ask),
+        ("vault", Off),
+    ]);
+    let desktop_full = features(&[
+        ("groups", Ask),
+        ("channels", Off),
+        ("preset_servers", Off),
+        ("calls", On),
+        ("files", On),
+        ("voice_messages", Off),
+        ("calculator_disguise", Ask),
+        ("laptop_link", On),
+        ("developer_tools", Off),
+        ("vault", On),
+    ]);
+    let set_id = hex(&bytes::<16>(&mut g.rng).unwrap());
+
+    // Accepted activation files.
+    let mut p = g.payload(
+        Kind::Activation,
+        Phone,
+        TorRequired,
+        CUSTOMER,
+        Some(key1),
+        0,
+    );
+    p.features = Some(phone_full.clone());
+    g.activation_file("activation-phone-features.sxact", &p, code_misc);
+    g.activation_vector("activation-phone-features", "activation-phone-features.sxact", &cm, Phone, Ok, "phone file with every switch: on, off and ask; the desktop-only switches laptop_link and vault off, developer_tools ask (accepted in a phone file)");
+    let mut p = g.payload(
+        Kind::Activation,
+        Desktop,
+        TorRequired,
+        CUSTOMER,
+        Some(key1),
+        0,
+    );
+    p.features = Some(desktop_full.clone());
+    g.activation_file("activation-desktop-features.sxact", &p, code_desktop);
+    g.activation_vector(
+        "activation-desktop-features",
+        "activation-desktop-features.sxact",
+        &cd,
+        Desktop,
+        Ok,
+        "desktop file with every switch, the desktop-only switches laptop_link and vault on",
+    );
+    for (name, f, note) in [
+        (
+            "activation-phone-features-missing-switch",
+            features(&[("groups", Off), ("calls", On)]),
+            "only groups off and calls on; every missing switch is not fixed (like ask)",
+        ),
+        (
+            "activation-phone-features-explicit-ask",
+            features(&[("groups", Off), ("calls", On), ("files", Ask)]),
+            "as activation-phone-features-missing-switch plus files ask: the same features_fixed, another features_profile (the hash is not normalized, section 12.4)",
+        ),
+        (
+            "activation-phone-features-nothing-fixed",
+            features(&[]),
+            "only profile_version: nothing is fixed, features_fixed is empty",
+        ),
+        (
+            "activation-phone-features-desktop-switch-off",
+            features(&[("vault", Off), ("groups", On)]),
+            "the desktop-only switch vault off in a phone file: accepted",
+        ),
+    ] {
+        let mut p = g.payload(Kind::Activation, Phone, TorRequired, CUSTOMER, Some(key1), 0);
+        p.features = Some(f);
+        let file = format!("{name}.sxact");
+        g.activation_file(&file, &p, code_misc);
+        g.activation_vector(name, &file, &cm, Phone, Ok, note);
+    }
+
+    // Refused: inside features (fail closed).
+    let base = {
+        let mut p = g.payload(
+            Kind::Activation,
+            Phone,
+            TorRequired,
+            CUSTOMER,
+            Some(key1),
+            0,
+        );
+        p.features = Some(features(&[("groups", Off)]));
+        p
+    };
+    type Raw = (&'static str, fn(&mut Value), &'static str);
+    let raw_refusals: [Raw; 6] = [
+        (
+            "refused-features-unknown-switch",
+            |v| v["features"]["stories"] = json!("off"),
+            "an unknown switch name (stories): the whole file is refused",
+        ),
+        (
+            "refused-features-unknown-value",
+            |v| v["features"]["groups"] = json!("disabled"),
+            "an unknown value (disabled) for groups",
+        ),
+        (
+            "refused-features-missing-profile-version",
+            |v| {
+                v["features"]
+                    .as_object_mut()
+                    .unwrap()
+                    .remove("profile_version");
+            },
+            "features without profile_version",
+        ),
+        (
+            "refused-features-profile-version-2",
+            |v| v["features"]["profile_version"] = json!(2),
+            "profile_version 2",
+        ),
+        (
+            "refused-features-profile-version-float",
+            |v| v["features"]["profile_version"] = json!(1.0),
+            "profile_version written 1.0: integers are read as integers",
+        ),
+        (
+            "refused-features-null",
+            |v| v["features"] = Value::Null,
+            "features: null (present, so it must be an object)",
+        ),
+    ];
+    for (name, f, note) in raw_refusals {
+        let json = json_with(&base, f);
+        let file = format!("{name}.sxact");
+        g.activation_file_raw(&file, &json, code_misc);
+        g.activation_vector(name, &file, &cm, Phone, Refused("bad_payload"), note);
+    }
+    let dup = String::from_utf8(base.to_json()).unwrap().replacen(
+        "\"groups\":\"off\"",
+        "\"groups\":\"off\",\"groups\":\"on\"",
+        1,
+    );
+    assert!(dup.contains("\"groups\":\"on\""));
+    g.activation_file_raw(
+        "refused-features-duplicate-switch.sxact",
+        dup.as_bytes(),
+        code_misc,
+    );
+    g.activation_vector("refused-features-duplicate-switch", "refused-features-duplicate-switch.sxact", &cm, Phone, Refused("bad_payload"), "groups twice in the features object (off, then on): a duplicate key is refused, never read as the last value");
+    let mut p = g.payload(
+        Kind::Activation,
+        Phone,
+        TorRequired,
+        CUSTOMER,
+        Some(key1),
+        0,
+    );
+    p.features = Some(features(&[("groups", Off), ("vault", On)]));
+    g.activation_file(
+        "refused-features-phone-desktop-switch-on.sxact",
+        &p,
+        code_misc,
+    );
+    g.activation_vector(
+        "refused-features-phone-desktop-switch-on",
+        "refused-features-phone-desktop-switch-on.sxact",
+        &cm,
+        Phone,
+        Refused("bad_payload"),
+        "the desktop-only switch vault on in a phone file",
+    );
+
+    // Update files.
+    let mut changed = phone_full.clone();
+    changed.groups = Some(Ask);
+    changed.calls = Some(Off);
+    let mut p = g.payload(Kind::Update, Phone, TorRequired, CUSTOMER, None, 1);
+    p.features = Some(changed);
+    g.update_file("update-phone-features-change.sxact", &p, key1);
+    g.update_vector("update-phone-features-change", "update-phone-features-change.sxact", &install(Phone, 0, Some(phone_full.clone())), Ok, "sequence 1 after activation-phone-features: replaces the whole profile; groups goes from off to ask (named in the summary as no longer fixed off), calls from on to off");
+    let p = g.payload(Kind::Update, Phone, TorRequired, CUSTOMER, None, 1);
+    g.update_file("update-phone-without-features.sxact", &p, key1);
+    g.update_vector("update-phone-without-features", "update-phone-without-features.sxact", &install(Phone, 0, Some(phone_full.clone())), Ok, "an update without features on an installation with a profile: the profile stays unchanged (section 12.4)");
+    let mut p = g.payload(Kind::Update, Phone, TorRequired, CUSTOMER, None, 1);
+    p.features = Some(features(&[("vault", On)]));
+    g.update_file(
+        "refused-update-features-phone-desktop-switch-on.sxact",
+        &p,
+        key1,
+    );
+    g.update_vector(
+        "refused-update-features-phone-desktop-switch-on",
+        "refused-update-features-phone-desktop-switch-on.sxact",
+        &install(Phone, 0, Some(phone_full.clone())),
+        Refused("bad_payload"),
+        "an update that sets the desktop-only switch vault on for a phone",
+    );
+
+    // Directory.
+    let server = |p: &Payload| parse_server(&p.servers.smp[0], "smp").unwrap();
+    let groups = [("TEST Kanzlei", true), ("TEST Empfang", false)];
+    let mut p = g.payload(
+        Kind::Activation,
+        Phone,
+        TorRequired,
+        CUSTOMER,
+        Some(key1),
+        0,
+    );
+    let mut d = directory(&server(&p), Role::Owner, &groups);
+    d.set_id = set_id.clone();
+    p.directory = Some(d);
+    p.features = Some(phone_full.clone());
+    g.activation_file("activation-phone-directory.sxact", &p, code_misc);
+    g.activation_vector("activation-phone-directory", "activation-phone-directory.sxact", &cm, Phone, Ok, "directory with two groups (direct_contacts true and false), role owner, a display name with umlauts and a hyphen; the group links are short links https://<onion>/g#<key>?c=<key hash> on servers.smp[0]; with the full phone feature profile");
+    note_links(g, &p);
+    let mut p = g.payload(
+        Kind::Activation,
+        Desktop,
+        TorOptional,
+        CUSTOMER,
+        Some(key1),
+        0,
+    );
+    let mut d = directory(&server(&p), Role::Member, &groups[..1]);
+    d.set_id = set_id.clone();
+    p.directory = Some(d);
+    p.features = Some(desktop_full.clone());
+    g.activation_file(
+        "activation-desktop-directory-tor-optional.sxact",
+        &p,
+        code_desktop,
+    );
+    g.activation_vector("activation-desktop-directory-tor-optional", "activation-desktop-directory-tor-optional.sxact", &cd, Desktop, Ok, "desktop, tor_optional, role member, one group: the link carries the server's clearnet host in h (https://<onion>/g#<key>?h=<clearnet>&c=<key hash>), as the servers rule needs");
+    note_links(g, &p);
+
+    let dir_base = |g: &mut Gen| {
+        let mut p = g.payload(
+            Kind::Activation,
+            Phone,
+            TorRequired,
+            CUSTOMER,
+            Some(key1),
+            0,
+        );
+        let mut d = directory(&server(&p), Role::Member, &groups);
+        d.set_id = set_id.clone();
+        p.directory = Some(d);
+        p
+    };
+    let kh = key_hash("TEST-ONLY-SMP-1");
+    let link_key = fake43("TEST-ONLY-GROUP-LINK-KEY");
+    let onion = g.hosts.smp_onion.clone();
+    let other_onion = fake_onion("testonlyother");
+    let link_refusals: Vec<(&str, String, &'static str, &str)> = vec![
+        ("refused-directory-group-link-clearnet-tor-required", format!("https://smp-a.example.invalid/g#{link_key}?c={kh}"), "network_mode_rule", "tor_required, the second group link's host is a clearnet host"),
+        ("refused-directory-group-link-other-server", format!("https://{other_onion}/g#{link_key}?c={kh}"), "bad_payload", "the second group link is on a valid onion host that is not the host of servers.smp (section 12.4: the server must be one of servers.smp)"),
+        ("refused-directory-group-link-other-key-hash", format!("https://{onion}/g#{link_key}?c={}", key_hash("TEST-ONLY-SMP-2")), "bad_payload", "the second group link has the host of servers.smp[0] but another key hash c"),
+        ("refused-directory-group-link-without-c", format!("https://{onion}/g#{link_key}"), "bad_payload", "a group link without c"),
+        ("refused-directory-group-link-contact-address", format!("https://{onion}/a#{link_key}?c={kh}"), "bad_payload", "a contact address (/a#) instead of a group link"),
+        ("refused-directory-group-link-channel", format!("https://{onion}/c#{link_key}?c={kh}"), "bad_payload", "a channel link (/c#); the directory takes only groups"),
+        ("refused-directory-group-link-simplex-form", format!("simplex:/g#{link_key}?h={onion}&c={kh}"), "bad_payload", "the simplex:/g#... form"),
+        ("refused-directory-group-link-long-form", format!("{}&data=%7B%22groupLinkId%22%3A%22TEST%22%7D", long_support("simplex:", &[&onion])), "bad_payload", "the long form simplex:/contact#/?...&data=... of a group link"),
+    ];
+    for (name, link, want, note) in link_refusals {
+        let mut p = dir_base(g);
+        p.directory.as_mut().unwrap().groups[1].link = link;
+        let file = format!("{name}.sxact");
+        g.activation_file(&file, &p, code_misc);
+        g.activation_vector(name, &file, &cm, Phone, Refused(want), note);
+        note_links(g, &p);
+    }
+    let raw_dir: [Raw; 4] = [
+        (
+            "refused-directory-unknown-field",
+            |v| v["directory"]["nickname"] = json!("TEST"),
+            "an unknown field (nickname) inside directory",
+        ),
+        (
+            "refused-directory-group-unknown-field",
+            |v| v["directory"]["groups"][0]["admin"] = json!(true),
+            "an unknown field (admin) inside a group",
+        ),
+        (
+            "refused-directory-unknown-role",
+            |v| v["directory"]["role"] = json!("admin"),
+            "role admin (only owner and member)",
+        ),
+        (
+            "refused-directory-version-2",
+            |v| v["directory"]["directory_version"] = json!(2),
+            "directory_version 2",
+        ),
+    ];
+    for (name, f, note) in raw_dir {
+        let p = dir_base(g);
+        let file = format!("{name}.sxact");
+        g.activation_file_raw(&file, &json_with(&p, f), code_misc);
+        g.activation_vector(name, &file, &cm, Phone, Refused("bad_payload"), note);
+        note_links(g, &p);
+    }
+    type FieldChange = (&'static str, fn(&mut Directory), &'static str);
+    let field_refusals: Vec<FieldChange> = vec![
+        ("refused-directory-display-name-dot", |d| d.display_name = "TEST Dr. Weber".into(), "display_name with a dot: not a valid SimpleX name (the core refuses . , ; / \\ # @ ' \" ` ~); \"TEST Dr Weber\" is valid"),
+        ("refused-directory-display-name-51-characters", |d| d.display_name = format!("TEST {}", "a".repeat(46)), "display_name of 51 characters (1 to 50)"),
+        ("refused-directory-group-name-double-space", |d| d.groups[0].name = "TEST  Kanzlei".into(), "a group name with two spaces in a row: the core would change it"),
+        ("refused-directory-no-groups", |d| d.groups.clear(), "groups empty (1 to 20)"),
+        ("refused-directory-set-id-upper-case", |d| d.set_id = d.set_id.to_ascii_uppercase(), "set_id in upper case hex"),
+    ];
+    for (name, f, note) in field_refusals {
+        let mut p = dir_base(g);
+        f(p.directory.as_mut().unwrap());
+        let file = format!("{name}.sxact");
+        g.activation_file(&file, &p, code_misc);
+        g.activation_vector(name, &file, &cm, Phone, Refused("bad_payload"), note);
+        note_links(g, &p);
+    }
+    let mut p = g.payload(Kind::Update, Phone, TorRequired, CUSTOMER, None, 1);
+    let mut d = directory(&server(&p), Role::Member, &groups);
+    d.set_id = set_id.clone();
+    p.directory = Some(d);
+    g.update_file("refused-update-directory.sxact", &p, key1);
+    g.update_vector(
+        "refused-update-directory",
+        "refused-update-directory.sxact",
+        &install(Phone, 0, None),
+        Refused("bad_payload"),
+        "an update file that carries a directory (directory is only in activation files)",
+    );
+    note_links(g, &p);
+    let mut p = g.payload(
+        Kind::Update,
+        Phone,
+        TorRequired,
+        "TEST-CUSTOMER-0002",
+        None,
+        1,
+    );
+    let mut d = directory(&server(&p), Role::Member, &groups);
+    d.set_id = set_id.clone();
+    p.directory = Some(d);
+    g.update_file("refused-update-directory-other-customer.sxact", &p, key1);
+    g.update_vector("refused-update-directory-other-customer", "refused-update-directory-other-customer.sxact", &install(Phone, 0, None), Refused("bad_payload"), "an update with a directory and another customer_ref: directory in an update is a field rule of step 5, which comes before the identity checks (as every field rule)");
+    note_links(g, &p);
+}
+
+/// Adds the plain group links of a directory vector's payload, for the
+/// check with the real SimpleX core (a later check). Test values only.
+fn note_links(g: &mut Gen, p: &Payload) {
+    if let Some(d) = &p.directory {
+        let links: Vec<&str> = d.groups.iter().map(|x| x.link.as_str()).collect();
+        g.vectors.last_mut().unwrap()["group_links"] = json!(links);
+    }
 }
 
 #[test]

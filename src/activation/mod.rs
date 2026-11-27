@@ -6,6 +6,8 @@
 
 pub mod code;
 pub mod container;
+pub mod directory;
+pub mod features;
 pub mod hosts;
 pub mod import;
 pub mod issue;
@@ -13,6 +15,8 @@ pub mod keys;
 pub mod payload;
 pub mod rng;
 pub mod store;
+pub mod storekey;
+pub mod strict;
 #[cfg(test)]
 mod vectors;
 

@@ -51,12 +51,15 @@ pub const DELIVERY_REFUSED: i32 = 15;
 /// pinned without `--accept-unverified-messenger`, Orbot signer not set).
 pub const DELIVERY_APK: i32 = 16;
 /// `deliver`: a write step on the phone failed (install, battery exception,
-/// Orbot, activation, system calculator). The record says `failed at step
-/// 5` to `8`.
+/// Orbot, activation, system calculator), or the delivery needs the file
+/// import (a fixed feature profile or a directory entry) and the messenger
+/// does not report it (after step 8 or in step 12, nothing issued). The
+/// record says `failed at step N`.
 pub const DELIVERY_FAILED: i32 = 17;
-/// `deliver`: every write step ran but the final check failed (status,
-/// battery exception, calculator, installed signer through the package
-/// manager or `base.apk` differs from the file, attestation after install).
+/// `deliver`: every write step ran but the final check failed (status, the
+/// reported feature profile, battery exception, calculator, installed
+/// signer through the package manager or `base.apk` differs from the file,
+/// attestation after install).
 pub const DELIVERY_CHECK: i32 = 18;
 /// `undeliver`: refused (no `--test-device`, no record, `setup=done` or
 /// state unreadable) or a step failed.
@@ -87,3 +90,10 @@ pub const OS_OUTDATED: i32 = 27;
 /// `os status`: the result is unknown (offline with nothing cached) or the
 /// phone is not on GrapheneOS.
 pub const OS_UNKNOWN: i32 = 28;
+/// `backup`: a destination failed (write, read back, check, rotation),
+/// nothing was written anywhere, backups are not set up, a drill or a
+/// restore failed, a timer step failed.
+pub const BACKUP: i32 = 29;
+/// `backup`: wrong backup password or recovery code, the recovery code not
+/// confirmed, a typed confirmation not given.
+pub const BACKUP_SECRET: i32 = 30;

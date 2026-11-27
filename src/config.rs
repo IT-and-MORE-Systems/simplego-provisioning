@@ -139,6 +139,10 @@ pub struct Config {
     /// given up and continued on a new Tor circuit (at most 3 attempts).
     #[serde(default = "default_download_idle")]
     pub download_idle_timeout_secs: u64,
+    /// The file this config was loaded from (absolute), for the backup of
+    /// `admin/config.toml` and the backup timer. Not a config key.
+    #[serde(skip)]
+    pub loaded_from: Option<PathBuf>,
 }
 
 fn default_agent_package() -> String {
@@ -227,7 +231,9 @@ impl Config {
         };
         let text = std::fs::read_to_string(&path)
             .map_err(|e| format!("cannot read config {}: {e}", path.display()))?;
-        let cfg = Config::parse(&text).map_err(|e| format!("config {}: {e}", path.display()))?;
+        let mut cfg =
+            Config::parse(&text).map_err(|e| format!("config {}: {e}", path.display()))?;
+        cfg.loaded_from = Some(std::fs::canonicalize(&path).unwrap_or_else(|_| path.clone()));
         Ok((cfg, path))
     }
 

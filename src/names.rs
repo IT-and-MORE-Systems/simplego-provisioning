@@ -16,10 +16,10 @@ pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 /// release (see docs/release-info/).
 pub const BUILD: &str = match option_env!("SXPROV_BUILD_NUMBER") {
     Some(b) => b,
-    None => "1",
+    None => "2",
 };
 
-/// "SimpleGo Provisioning 0.1.0 alpha (build N)".
+/// "SimpleGo Provisioning 0.2.0 alpha (build N)".
 pub fn version_line() -> String {
     format!(
         "{PRODUCT} {} (build {BUILD})",
@@ -27,7 +27,7 @@ pub fn version_line() -> String {
     )
 }
 
-/// The version as the records keep it: "0.1.0-alpha+N".
+/// The version as the records keep it: "0.2.0-alpha+N".
 pub fn version_tag() -> String {
     format!("{VERSION}+{BUILD}")
 }
@@ -59,10 +59,10 @@ mod tests {
     fn version_line_and_tag() {
         let l = super::version_line();
         assert!(
-            l.starts_with("SimpleGo Provisioning 0.1.0 alpha (build "),
+            l.starts_with("SimpleGo Provisioning 0.2.0 alpha (build "),
             "{l}"
         );
         assert!(l.ends_with(')'), "{l}");
-        assert!(super::version_tag().starts_with("0.1.0-alpha+"));
+        assert!(super::version_tag().starts_with("0.2.0-alpha+"));
     }
 }

@@ -36,14 +36,19 @@ release.
 | aead | 0.5.2 | MIT OR Apache-2.0 | in the binary | https://github.com/RustCrypto/traits |
 | aes | 0.8.4 | MIT OR Apache-2.0 | in the binary | https://github.com/RustCrypto/block-ciphers |
 | aes-gcm | 0.10.3 | Apache-2.0 OR MIT | in the binary | https://github.com/RustCrypto/AEADs |
+| age | 0.11.5 | MIT OR Apache-2.0 | in the binary | https://github.com/str4d/rage |
+| age-core | 0.11.0 | MIT OR Apache-2.0 | in the binary | https://github.com/str4d/rage |
+| arc-swap | 1.9.5 | MIT OR Apache-2.0 | in the binary | https://github.com/vorner/arc-swap |
 | argon2 | 0.6.0 | MIT OR Apache-2.0 | in the binary | https://github.com/RustCrypto/password-hashes |
 | asn1-rs | 0.7.2 | MIT OR Apache-2.0 | tests only | https://github.com/rusticata/asn1-rs.git |
 | asn1-rs-derive | 0.6.0 | MIT OR Apache-2.0 | tests only | https://github.com/rusticata/asn1-rs.git |
 | asn1-rs-impl | 0.2.0 | MIT/Apache-2.0 | tests only | https://github.com/rusticata/asn1-rs.git |
 | autocfg | 1.5.1 | Apache-2.0 OR MIT | tests only | https://github.com/cuviper/autocfg |
+| base64 | 0.21.7 | MIT OR Apache-2.0 | in the binary | https://github.com/marshallpierce/rust-base64 |
 | base64 | 0.23.1 | MIT OR Apache-2.0 | in the binary | https://github.com/marshallpierce/rust-base64 |
 | base64ct | 1.8.3 | Apache-2.0 OR MIT | in the binary | https://github.com/RustCrypto/formats |
 | bcrypt-pbkdf | 0.10.0 | MIT OR Apache-2.0 | in the binary | https://github.com/RustCrypto/password-hashes/tree/master/bcrypt-pbkdf |
+| bech32 | 0.9.1 | MIT | in the binary | https://github.com/rust-bitcoin/rust-bech32 |
 | bit-vec | 0.9.1 | Apache-2.0 OR MIT | tests only | https://github.com/contain-rs/bit-vec |
 | blake2 | 0.11.0 | MIT OR Apache-2.0 | in the binary | https://github.com/RustCrypto/hashes |
 | block-buffer | 0.10.4 | MIT OR Apache-2.0 | in the binary | https://github.com/RustCrypto/utils |
@@ -55,15 +60,18 @@ release.
 | cbc | 0.1.2 | MIT OR Apache-2.0 | in the binary | https://github.com/RustCrypto/block-modes |
 | cfg-if | 1.0.5 | MIT OR Apache-2.0 | in the binary | https://github.com/rust-lang/cfg-if |
 | chacha20 | 0.9.1 | Apache-2.0 OR MIT | in the binary | https://github.com/RustCrypto/stream-ciphers |
+| chacha20poly1305 | 0.10.1 | Apache-2.0 OR MIT | in the binary | https://github.com/RustCrypto/AEADs/tree/master/chacha20poly1305 |
 | cipher | 0.4.4 | MIT OR Apache-2.0 | in the binary | https://github.com/RustCrypto/traits |
 | cmov | 0.5.4 | Apache-2.0 OR MIT | in the binary | https://github.com/RustCrypto/utils |
 | const-oid | 0.10.3 | Apache-2.0 OR MIT | in the binary | https://github.com/RustCrypto/formats |
+| cookie-factory | 0.3.3 | MIT | in the binary | https://github.com/rust-bakery/cookie-factory |
 | cpufeatures | 0.2.17 | MIT OR Apache-2.0 | in the binary | https://github.com/RustCrypto/utils |
 | cpufeatures | 0.3.1 | MIT OR Apache-2.0 | in the binary | https://github.com/RustCrypto/utils |
 | crypto-common | 0.1.7 | MIT OR Apache-2.0 | in the binary | https://github.com/RustCrypto/traits |
 | crypto-common | 0.2.2 | MIT OR Apache-2.0 | in the binary | https://github.com/RustCrypto/traits |
 | ctr | 0.9.2 | MIT OR Apache-2.0 | in the binary | https://github.com/RustCrypto/block-modes |
 | ctutils | 0.4.8 | Apache-2.0 OR MIT | in the binary | https://github.com/RustCrypto/utils |
+| curve25519-dalek | 4.1.3 | BSD-3-Clause | in the binary | https://github.com/dalek-cryptography/curve25519-dalek/tree/main/curve25519-dalek |
 | data-encoding | 2.11.1 | MIT | tests only | https://github.com/ia0/data-encoding |
 | der | 0.8.3 | Apache-2.0 OR MIT | in the binary | https://github.com/RustCrypto/formats |
 | der-parser | 10.0.0 | MIT OR Apache-2.0 | tests only | https://github.com/rusticata/der-parser.git |
@@ -72,22 +80,41 @@ release.
 | digest | 0.11.3 | MIT OR Apache-2.0 | in the binary | https://github.com/RustCrypto/traits |
 | displaydoc | 0.2.7 | MIT OR Apache-2.0 | tests only | https://github.com/yaahc/displaydoc |
 | flagset | 0.4.7 | Apache-2.0 | in the binary | https://github.com/enarx/flagset |
+| fluent | 0.16.1 | Apache-2.0 OR MIT | in the binary | https://github.com/projectfluent/fluent-rs |
+| fluent-bundle | 0.15.3 | Apache-2.0 OR MIT | in the binary | https://github.com/projectfluent/fluent-rs |
+| fluent-langneg | 0.13.1 | Apache-2.0 OR MIT | in the binary | https://github.com/projectfluent/fluent-langneg-rs |
+| fluent-syntax | 0.11.1 | Apache-2.0 OR MIT | in the binary | https://github.com/projectfluent/fluent-rs |
+| futures | 0.3.34 | MIT OR Apache-2.0 | in the binary | https://github.com/rust-lang/futures-rs |
+| futures-channel | 0.3.34 | MIT OR Apache-2.0 | in the binary | https://github.com/rust-lang/futures-rs |
+| futures-core | 0.3.34 | MIT OR Apache-2.0 | in the binary | https://github.com/rust-lang/futures-rs |
+| futures-executor | 0.3.34 | MIT OR Apache-2.0 | in the binary | https://github.com/rust-lang/futures-rs |
+| futures-io | 0.3.34 | MIT OR Apache-2.0 | in the binary | https://github.com/rust-lang/futures-rs |
+| futures-sink | 0.3.34 | MIT OR Apache-2.0 | in the binary | https://github.com/rust-lang/futures-rs |
+| futures-task | 0.3.34 | MIT OR Apache-2.0 | in the binary | https://github.com/rust-lang/futures-rs |
+| futures-util | 0.3.34 | MIT OR Apache-2.0 | in the binary | https://github.com/rust-lang/futures-rs |
 | generic-array | 0.14.7 | MIT | in the binary | https://github.com/fizyk20/generic-array.git |
 | getrandom | 0.2.17 | MIT OR Apache-2.0 | in the binary | https://github.com/rust-random/getrandom |
 | ghash | 0.5.1 | Apache-2.0 OR MIT | in the binary | https://github.com/RustCrypto/universal-hashes |
+| hkdf | 0.12.4 | MIT OR Apache-2.0 | in the binary | https://github.com/RustCrypto/KDFs/ |
+| hmac | 0.12.1 | MIT OR Apache-2.0 | in the binary | https://github.com/RustCrypto/MACs |
 | http | 1.5.0 | MIT OR Apache-2.0 | in the binary | https://github.com/hyperium/http |
 | httparse | 1.10.1 | MIT OR Apache-2.0 | in the binary | https://github.com/seanmonstar/httparse |
 | hybrid-array | 0.4.15 | MIT OR Apache-2.0 | in the binary | https://github.com/RustCrypto/hybrid-array |
+| i18n-embed | 0.15.4 | MIT | in the binary | https://github.com/kellpossible/cargo-i18n/tree/master/i18n-embed |
 | inout | 0.1.4 | MIT OR Apache-2.0 | in the binary | https://github.com/RustCrypto/utils |
+| intl-memoizer | 0.5.3 | Apache-2.0 OR MIT | in the binary | https://github.com/projectfluent/fluent-rs |
+| intl_pluralrules | 7.0.2 | Apache-2.0/MIT | in the binary | https://github.com/zbraniecki/pluralrules |
+| io_tee | 0.1.1 | MIT OR Apache-2.0 | in the binary | https://github.com/TheOnlyMrCat/io_tee |
 | itoa | 1.0.19 | MIT OR Apache-2.0 | in the binary | https://github.com/dtolnay/itoa |
 | keccak | 0.2.2 | Apache-2.0 OR MIT | in the binary | https://github.com/RustCrypto/sponges |
-| lazy_static | 1.5.1 | MIT OR Apache-2.0 | tests only | https://github.com/rust-lang-nursery/lazy-static.rs |
+| lazy_static | 1.5.1 | MIT OR Apache-2.0 | in the binary | https://github.com/rust-lang-nursery/lazy-static.rs |
 | libc | 0.2.191 | MIT OR Apache-2.0 | in the binary | https://github.com/rust-lang/libc |
+| lock_api | 0.4.14 | MIT OR Apache-2.0 | in the binary | https://github.com/Amanieu/parking_lot |
 | log | 0.4.35 | MIT OR Apache-2.0 | in the binary | https://github.com/rust-lang/log |
 | memchr | 2.8.3 | Unlicense OR MIT | in the binary | https://github.com/BurntSushi/memchr |
-| minimal-lexical | 0.2.1 | MIT/Apache-2.0 | tests only | https://github.com/Alexhuszagh/minimal-lexical |
+| minimal-lexical | 0.2.1 | MIT/Apache-2.0 | in the binary | https://github.com/Alexhuszagh/minimal-lexical |
 | miniz_oxide | 0.8.9 | MIT OR Zlib OR Apache-2.0 | in the binary | https://github.com/Frommi/miniz_oxide/tree/master/miniz_oxide |
-| nom | 7.1.3 | MIT | tests only | https://github.com/Geal/nom |
+| nom | 7.1.3 | MIT | in the binary | https://github.com/Geal/nom |
 | num-bigint | 0.4.8 | MIT OR Apache-2.0 | tests only | https://github.com/rust-num/num-bigint |
 | num-conv | 0.2.2 | MIT OR Apache-2.0 | tests only | https://github.com/jhpratt/num-conv |
 | num-integer | 0.1.47 | MIT OR Apache-2.0 | tests only | https://github.com/rust-num/num-integer |
@@ -95,6 +122,8 @@ release.
 | oid-registry | 0.8.1 | MIT OR Apache-2.0 | tests only | https://github.com/rusticata/oid-registry.git |
 | once_cell | 1.21.4 | MIT OR Apache-2.0 | in the binary | https://github.com/matklad/once_cell |
 | opaque-debug | 0.3.1 | MIT OR Apache-2.0 | in the binary | https://github.com/RustCrypto/utils |
+| parking_lot | 0.12.5 | MIT OR Apache-2.0 | in the binary | https://github.com/Amanieu/parking_lot |
+| parking_lot_core | 0.9.12 | MIT OR Apache-2.0 | in the binary | https://github.com/Amanieu/parking_lot |
 | password-hash | 0.6.1 | MIT OR Apache-2.0 | in the binary | https://github.com/RustCrypto/traits |
 | pbkdf2 | 0.12.2 | MIT OR Apache-2.0 | in the binary | https://github.com/RustCrypto/password-hashes/tree/master/pbkdf2 |
 | pem | 4.0.0 | MIT | tests only | https://github.com/jcreekmore/pem-rs.git |
@@ -102,27 +131,46 @@ release.
 | pem-rfc7468 | 1.0.0 | Apache-2.0 OR MIT | in the binary | https://github.com/RustCrypto/formats |
 | percent-encoding | 2.3.2 | MIT OR Apache-2.0 | in the binary | https://github.com/servo/rust-url/ |
 | phc | 0.6.1 | Apache-2.0 OR MIT | in the binary | https://github.com/RustCrypto/formats |
+| pin-project | 1.2.0 | Apache-2.0 OR MIT | in the binary | https://github.com/taiki-e/pin-project |
+| pin-project-lite | 0.2.18 | Apache-2.0 OR MIT | in the binary | https://github.com/taiki-e/pin-project-lite |
 | poly1305 | 0.8.0 | Apache-2.0 OR MIT | in the binary | https://github.com/RustCrypto/universal-hashes |
 | polyval | 0.6.2 | Apache-2.0 OR MIT | in the binary | https://github.com/RustCrypto/universal-hashes |
 | powerfmt | 0.2.1 | MIT OR Apache-2.0 | tests only | https://github.com/jhpratt/powerfmt |
+| ppv-lite86 | 0.2.21 | MIT OR Apache-2.0 | in the binary | https://github.com/cryptocorrosion/cryptocorrosion |
 | proc-macro2 | 1.0.107 | MIT OR Apache-2.0 | tests only | https://github.com/dtolnay/proc-macro2 |
 | quote | 1.0.47 | MIT OR Apache-2.0 | tests only | https://github.com/dtolnay/quote |
+| rand | 0.8.8 | MIT OR Apache-2.0 | in the binary | https://github.com/rust-random/rand |
+| rand_chacha | 0.3.1 | MIT OR Apache-2.0 | in the binary | https://github.com/rust-random/rand |
 | rand_core | 0.6.4 | MIT OR Apache-2.0 | in the binary | https://github.com/rust-random/rand |
 | rcgen | 0.14.10 | MIT OR Apache-2.0 | tests only | https://github.com/rustls/rcgen |
 | ring | 0.17.14 | Apache-2.0 AND ISC | in the binary | https://github.com/briansmith/ring |
 | rpassword | 7.5.5 | Apache-2.0 | in the binary | https://github.com/conradkleinespel/rpassword |
 | rtoolbox | 0.0.6 | Apache-2.0 | in the binary | https://github.com/conradkleinespel/rtoolbox |
+| rust-embed | 8.14.0 | MIT | in the binary | https://pyrossh.dev/repos/rust-embed |
+| rust-embed-utils | 8.14.0 | MIT | in the binary | https://pyrossh.dev/repos/rust-embed |
+| rustc-hash | 1.1.0 | Apache-2.0/MIT | in the binary | https://github.com/rust-lang-nursery/rustc-hash |
+| rustc-hash | 2.1.3 | Apache-2.0 OR MIT | in the binary | https://github.com/rust-lang/rustc-hash |
 | rusticata-macros | 4.1.0 | MIT/Apache-2.0 | tests only | https://github.com/rusticata/rusticata-macros.git |
 | rustls | 0.23.46 | Apache-2.0 OR ISC OR MIT | in the binary | https://github.com/rustls/rustls |
 | rustls-pki-types | 1.16.0 | MIT OR Apache-2.0 | in the binary | https://github.com/rustls/pki-types |
 | rustls-webpki | 0.103.17 | ISC | in the binary | https://github.com/rustls/webpki |
+| salsa20 | 0.10.2 | MIT OR Apache-2.0 | in the binary | https://github.com/RustCrypto/stream-ciphers |
+| same-file | 1.0.6 | Unlicense/MIT | in the binary | https://github.com/BurntSushi/same-file |
+| scopeguard | 1.2.0 | MIT OR Apache-2.0 | in the binary | https://github.com/bluss/scopeguard |
+| scrypt | 0.11.0 | MIT OR Apache-2.0 | in the binary | https://github.com/RustCrypto/password-hashes/tree/master/scrypt |
+| secrecy | 0.10.3 | Apache-2.0 OR MIT | in the binary | https://github.com/iqlusioninc/crates/tree/main/secrecy |
+| self_cell | 0.10.3 | Apache-2.0 | in the binary | https://github.com/Voultapher/self_cell |
+| self_cell | 1.3.0 | Apache-2.0 OR GPL-2.0-only | in the binary | https://github.com/Voultapher/self_cell |
 | serde | 1.0.229 | MIT OR Apache-2.0 | in the binary | https://github.com/serde-rs/serde |
 | serde_core | 1.0.229 | MIT OR Apache-2.0 | in the binary | https://github.com/serde-rs/serde |
 | serde_json | 1.0.154 | MIT OR Apache-2.0 | in the binary | https://github.com/serde-rs/json |
 | serde_spanned | 1.1.3 | MIT OR Apache-2.0 | in the binary | https://github.com/toml-rs/toml |
 | sha2 | 0.10.9 | MIT OR Apache-2.0 | in the binary | https://github.com/RustCrypto/hashes |
+| sha2 | 0.11.2 | MIT OR Apache-2.0 | in the binary | https://github.com/RustCrypto/hashes |
 | sha3 | 0.12.0 | MIT OR Apache-2.0 | in the binary | https://github.com/RustCrypto/hashes |
 | signature | 2.2.0 | Apache-2.0 OR MIT | in the binary | https://github.com/RustCrypto/traits/tree/master/signature |
+| slab | 0.4.12 | MIT | in the binary | https://github.com/tokio-rs/slab |
+| smallvec | 1.16.6 | MIT OR Apache-2.0 | in the binary | https://github.com/smallvec/smallvec |
 | spki | 0.8.1 | Apache-2.0 OR MIT | in the binary | https://github.com/RustCrypto/formats |
 | sponge-cursor | 0.1.0 | MIT OR Apache-2.0 | in the binary | https://github.com/RustCrypto/utils |
 | ssh-cipher | 0.2.0 | Apache-2.0 OR MIT | in the binary | https://github.com/RustCrypto/SSH/tree/master/ssh-cipher |
@@ -132,27 +180,37 @@ release.
 | syn | 2.0.119 | MIT OR Apache-2.0 | tests only | https://github.com/dtolnay/syn |
 | syn | 3.0.10 | MIT OR Apache-2.0 | tests only | https://github.com/dtolnay/syn |
 | synstructure | 0.13.2 | MIT | tests only | https://github.com/mystor/synstructure |
+| thiserror | 1.0.69 | MIT OR Apache-2.0 | in the binary | https://github.com/dtolnay/thiserror |
 | thiserror | 2.0.21 | MIT OR Apache-2.0 | tests only | https://github.com/dtolnay/thiserror |
 | thiserror-impl | 2.0.21 | MIT OR Apache-2.0 | tests only | https://github.com/dtolnay/thiserror |
 | time | 0.3.55 | MIT OR Apache-2.0 | tests only | https://github.com/time-rs/time |
 | time-core | 0.1.9 | MIT OR Apache-2.0 | tests only | https://github.com/time-rs/time |
 | time-macros | 0.2.32 | MIT OR Apache-2.0 | tests only | https://github.com/time-rs/time |
+| tinystr | 0.8.5 | Unicode-3.0 | in the binary | https://github.com/unicode-org/icu4x |
 | toml | 1.2.1+spec-1.1.0 | MIT OR Apache-2.0 | in the binary | https://github.com/toml-rs/toml |
 | toml_datetime | 1.1.3+spec-1.1.0 | MIT OR Apache-2.0 | in the binary | https://github.com/toml-rs/toml |
 | toml_parser | 1.1.5+spec-1.1.0 | MIT OR Apache-2.0 | in the binary | https://github.com/toml-rs/toml |
+| type-map | 0.5.1 | MIT/Apache-2.0 | in the binary | https://github.com/kardeiz/type-map |
 | typenum | 1.20.1 | MIT OR Apache-2.0 | in the binary | https://github.com/paholg/typenum |
+| unic-langid | 0.9.6 | MIT OR Apache-2.0 | in the binary | https://github.com/zbraniecki/unic-locale |
+| unic-langid-impl | 0.9.6 | MIT OR Apache-2.0 | in the binary | https://github.com/zbraniecki/unic-locale |
 | unicode-ident | 1.0.27 | (MIT OR Apache-2.0) AND Unicode-3.0 | tests only | https://github.com/dtolnay/unicode-ident |
 | universal-hash | 0.5.1 | MIT OR Apache-2.0 | in the binary | https://github.com/RustCrypto/traits |
 | untrusted | 0.9.0 | ISC | in the binary | https://github.com/briansmith/untrusted |
 | ureq | 3.5.2 | MIT OR Apache-2.0 | in the binary | https://github.com/algesten/ureq |
 | ureq-proto | 0.7.1 | MIT OR Apache-2.0 | in the binary | https://github.com/algesten/ureq-proto |
 | utf8-zero | 0.8.1 | MIT OR Apache-2.0 | in the binary | https://github.com/algesten/utf8-zero |
+| walkdir | 2.5.1 | Unlicense/MIT | in the binary | https://github.com/BurntSushi/walkdir |
 | webpki-roots | 1.0.12 | CDLA-Permissive-2.0 | in the binary | https://github.com/rustls/webpki-roots |
 | winnow | 1.0.5 | MIT | in the binary | https://github.com/winnow-rs/winnow |
+| x25519-dalek | 2.0.1 | BSD-3-Clause | in the binary | https://github.com/dalek-cryptography/curve25519-dalek/tree/main/x25519-dalek |
 | x509-cert | 0.3.0 | Apache-2.0 OR MIT | in the binary | https://github.com/RustCrypto/formats |
 | x509-parser | 0.18.1 | MIT OR Apache-2.0 | tests only | https://github.com/rusticata/x509-parser.git |
 | yasna | 0.6.0 | MIT OR Apache-2.0 | tests only | https://github.com/qnighy/yasna.rs |
+| zerocopy | 0.8.66 | BSD-2-Clause OR Apache-2.0 OR MIT | in the binary | https://github.com/google/zerocopy |
+| zerofrom | 0.1.8 | Unicode-3.0 | in the binary | https://github.com/unicode-org/icu4x |
 | zeroize | 1.9.2 | Apache-2.0 OR MIT | in the binary | https://github.com/RustCrypto/utils |
+| zerovec | 0.11.9 | Unicode-3.0 | in the binary | https://github.com/unicode-org/icu4x |
 | zmij | 1.0.23 | MIT | in the binary | https://github.com/dtolnay/zmij |
 
 <!-- dependencies:end -->
@@ -182,6 +240,8 @@ standard library. Its build uses:
 | adb, fastboot (Android SDK Platform-Tools) | Apache-2.0 | https://android.googlesource.com/platform/packages/modules/adb |
 | Tor (SOCKS proxy on the admin machine) | BSD-3-Clause | https://gitlab.torproject.org/tpo/core/tor |
 | GrapheneOS `flash-all.sh` (from the verified factory image, run unchanged) | MIT | https://github.com/GrapheneOS |
+| `systemd-creds`, `systemctl` (systemd; the TPM-sealed store key, the backup timer) | LGPL-2.1-or-later | https://github.com/systemd/systemd |
+| `age`, `age-keygen` (tests only: the cross-check of the backup format, `tools/age_crosscheck.py`, from Debian's package) | BSD-3-Clause | https://github.com/FiloSottile/age |
 
 ### Apps installed on a delivered phone (not part of this repository)
 

@@ -5,7 +5,9 @@ the desktop app. Format: SXACT version 1, as described in the activation
 file format document (version 1 with the amendments of
 2026-11-19 23:10, 2026-11-21 00:41 "Short links", 2026-11-21 10:30
 "Short link grammar" and 2026-11-21 11:00 "Server fingerprint" and the
-order of checks, and 2026-11-23 "Support address in `tor_optional`").
+order of checks, 2026-11-23 "Support address in `tor_optional`", and
+section 12 "Feature profile and customer directory" of 2026-11-27 with its
+amendments 12.4).
 
 Every file here is signed with the **TEST ONLY** key in `keys/`. Apps may
 trust this key only in debug and test builds. A release build must fail if
@@ -60,6 +62,14 @@ display form, and with a wrong code). Each entry has:
   only field your test compares results against, and it is binding.
 - `expected_payload`: for `ok`, the payload your import must produce,
   field by field.
+- `expected_features_profile`, `expected_features_fixed` (section 12, only
+  where the installation has a feature profile after an `ok` import): the
+  `features_profile` and `features_fixed` your `status` must report.
+- `installation.features`, `installation.features_profile` (update vectors
+  of section 12): the profile the installation has before the update.
+- `group_links` (vectors with a `directory`): the group links of the
+  payload in plain text, for a check with the real SimpleX core. Test
+  values only.
 - `reason`, `note`: plain-English explanations for humans. Do not compare
   against them: their wording may change between generator versions
   without any change to the file or to `expected` (for example the
@@ -89,9 +99,9 @@ check the file must stop.
 | `bad_code` | the code is not exactly 13 valid bytes after the input mapping; refused without trying it |
 | `wrong_code` | the GCM tag fails with the derived key ("the code does not match this file") |
 | `wrong_update_key` | the update key id in the salt field is not the stored one ("this update is not for this installation") |
-| `bad_payload` | a required field is missing or invalid (also: a fingerprint that is not a 32-byte key hash, an invalid or upper-case v3 onion name, a network mode value other than the three, a support address outside the accepted grammar) |
+| `bad_payload` | a required field is missing or invalid (also: a fingerprint that is not a 32-byte key hash, an invalid or upper-case v3 onion name, a network mode value other than the three, a support address outside the accepted grammar; section 12: anything refused inside `features` or `directory`, a group link outside the grammar or not on one of `servers.smp`, a `directory` in an update file) |
 | `kind_mismatch` | the payload `kind` does not match the container's kdf_alg |
-| `network_mode_rule` | an address (server or support) breaks the rule of the network mode |
+| `network_mode_rule` | an address (server, support or group link) breaks the rule of the network mode |
 | `device_class_mismatch` | the file is for the other device class |
 | `customer_mismatch` | the update's `customer_ref` is not the installation's |
 | `replayed_sequence` | the update's `sequence` is not greater than the last applied one |
@@ -245,6 +255,138 @@ order (format document section 6, clarified 2026-11-21 11:00):
 An app that reads `network_mode` into an enum while parsing would report a
 bad mode value before a wrong device class. The vectors do not contain that
 case, but the format document's order is binding all the same.
+
+## Feature profile and customer directory (added 2026-11-27)
+
+Format document section 12 with the amendments of 12.4. Two optional
+payload objects, still format version 1. Outside them, unknown top-level
+fields are still ignored (section 7); inside them every rule fails closed:
+a name, value or field your app does not know refuses the whole file.
+
+### `features` (section 12.1)
+
+    "features": {"profile_version": 1, "groups": "off", "calls": "on", ...}
+
+- `profile_version` required, the integer `1` (`1.0` is refused).
+- Switches: `groups`, `channels`, `preset_servers`, `calls`, `files`,
+  `voice_messages`, `calculator_disguise` (phone and desktop);
+  `laptop_link`, `developer_tools`, `vault` (desktop only). Values `on`,
+  `off`, `ask`; a missing switch is not fixed, like `ask`.
+- Refused (`bad_payload`): an unknown switch, an unknown value (also upper
+  case), `null` for a switch or for the whole object, a duplicate key
+  (never read as the last value: check your JSON reader, several keep the
+  last one silently), a missing `profile_version`, an array instead of the
+  object, and a desktop-only switch `on` in a phone file (`off` and `ask`
+  are accepted there).
+- In an update: without `features` the installed profile stays unchanged;
+  with `features` it replaces the whole profile (12.4).
+- `features_profile`: the first 16 lowercase hex characters of SHA-256 over
+  the canonical JSON of the object as issued: keys sorted, no spaces, UTF-8,
+  `profile_version` written as `1`. Nothing is normalized: an explicit
+  `ask` and a missing switch give different values (compare
+  `activation-phone-features-missing-switch` and
+  `activation-phone-features-explicit-ask`). Compute it from your checked
+  object, not from the file's bytes. The example object of section 12.1
+  gives `82c3232f78958958`.
+- `features_fixed`: the switches with `on` or `off`, sorted by name, as
+  `name:value` joined by `,` (empty when none is fixed).
+
+### `directory` (section 12.2)
+
+    "directory": {"directory_version": 1, "set_id": "<32 hex>",
+      "display_name": "...", "role": "owner",
+      "groups": [{"name": "...", "link": "https://<host>/g#<key>?c=<key hash>", "direct_contacts": true}]}
+
+- Only in activation files; in an update file it is refused (`bad_payload`).
+- `directory_version` the integer `1`; `set_id` 32 lowercase hex
+  characters; `role` `owner` or `member`; 1 to 20 groups;
+  `direct_contacts` `true` or `false`; every field required, no other
+  field in the object or in a group.
+- `display_name` and every group `name`: 1 to 50 characters and a valid
+  SimpleX name as the v7.1.4 core accepts it unchanged (12.4): it starts
+  with a letter or digit, has no leading or trailing space, no two spaces
+  or two hyphens in a row, none of `. , ; / \ # @ ' " ` ~`. The generator
+  writes only Latin letters (also accented letters and umlauts), digits,
+  spaces and hyphens. Apps check the core's rule.
+- Group links (12.4): only the short form `https://<host>/g#<key>?...`
+  with the grammar of the support short link (`c` required, `h` and `p` the
+  only other parameters). Refused (`bad_payload`): the long form
+  `simplex:/contact#/?...&data=...`, `simplex:/g#...`, upper case `G`,
+  `/g/#`, and the types `a`, `i`, `c` (channels) and `r`.
+- Hosts for the network mode rules: the link host plus every `h` host; the
+  rule is the servers' rule (in `tor_optional` an onion host and a clearnet
+  host, unlike the support address).
+- The server of every group link (its hosts in order, its port and its key
+  hash `c`, compared as bytes) must equal one of `servers.smp`
+  (`bad_payload` otherwise).
+
+The synthetic group links are built like the other test addresses: on the
+vectors' SMP server (`testonly...onion`, in `tor_optional` with
+`smp-a.example.invalid` in `h`), the key SHA-256 over
+`TEST-ONLY-GROUP-LINK-KEY-<n>`, `c` the server's key hash. The generator's
+link writer reproduces the short link strings of the simplexmq tests byte
+for byte (`tests/AgentTests/ConnectionRequestTests.hs` at `fdbcb24d`). They
+were not yet parsed by a running core; that check is still open.
+
+### Order of checks with section 12
+
+1. Step 5: the fields as above, then inside `features` and `directory`
+   (structure, names, values, versions, `set_id`, names, the number of
+   groups, a `directory` in an update file). Like every field rule this
+   comes before the identity checks of an update
+   (`refused-update-directory-other-customer` is `bad_payload`).
+2. Step 6: the device class, then the desktop-only switch rule, then the
+   network mode value, then the addresses: every address parsed (servers,
+   support address, group link grammar), then the network mode rules over
+   all of them (`network_mode_rule`), then the group link server match
+   (`bad_payload`).
+
+### Vectors
+
+| Vector | Expected |
+|---|---|
+| `activation-phone-features` | `ok`: every switch, on, off and ask; desktop-only switches off or ask |
+| `activation-desktop-features` | `ok`: every switch, `laptop_link` and `vault` on |
+| `activation-phone-features-missing-switch` | `ok`: only two switches |
+| `activation-phone-features-explicit-ask` | `ok`: the same plus `files` ask: same `features_fixed`, other `features_profile` |
+| `activation-phone-features-nothing-fixed` | `ok`: only `profile_version`, `features_fixed` empty |
+| `activation-phone-features-desktop-switch-off` | `ok`: `vault` off in a phone file |
+| `refused-features-unknown-switch` | `bad_payload` |
+| `refused-features-unknown-value` | `bad_payload` |
+| `refused-features-missing-profile-version` | `bad_payload` |
+| `refused-features-profile-version-2` | `bad_payload` |
+| `refused-features-profile-version-float` | `bad_payload`: `1.0` |
+| `refused-features-null` | `bad_payload` |
+| `refused-features-duplicate-switch` | `bad_payload`: `groups` twice |
+| `refused-features-phone-desktop-switch-on` | `bad_payload`: `vault` on in a phone file |
+| `update-phone-features-change` | `ok`: replaces the profile; `groups` off to ask is named in the summary |
+| `update-phone-without-features` | `ok`: the installed profile stays (expected values are the installation's) |
+| `refused-update-features-phone-desktop-switch-on` | `bad_payload` |
+| `activation-phone-directory` | `ok`: two groups, role owner, umlauts and a hyphen in the name |
+| `activation-desktop-directory-tor-optional` | `ok`: one group, the link with `h` |
+| `refused-directory-group-link-clearnet-tor-required` | `network_mode_rule` |
+| `refused-directory-group-link-other-server` | `bad_payload`: another onion host |
+| `refused-directory-group-link-other-key-hash` | `bad_payload`: the right host, another `c` |
+| `refused-directory-group-link-without-c` | `bad_payload` |
+| `refused-directory-group-link-contact-address` | `bad_payload`: `/a#` |
+| `refused-directory-group-link-channel` | `bad_payload`: `/c#` |
+| `refused-directory-group-link-simplex-form` | `bad_payload` |
+| `refused-directory-group-link-long-form` | `bad_payload` |
+| `refused-directory-unknown-field` | `bad_payload` |
+| `refused-directory-group-unknown-field` | `bad_payload` |
+| `refused-directory-unknown-role` | `bad_payload` |
+| `refused-directory-version-2` | `bad_payload` |
+| `refused-directory-display-name-dot` | `bad_payload`: `TEST Dr. Weber` |
+| `refused-directory-display-name-51-characters` | `bad_payload` |
+| `refused-directory-group-name-double-space` | `bad_payload` |
+| `refused-directory-no-groups` | `bad_payload` |
+| `refused-directory-set-id-upper-case` | `bad_payload` |
+| `refused-update-directory` | `bad_payload` |
+| `refused-update-directory-other-customer` | `bad_payload`: the field rule before the identity check |
+
+Every earlier `.sxact` file and the key files are byte-identical. In
+`vectors.json` only the `format` line of the earlier content changed; the
+new entries are added at the end.
 
 ## Regenerating
 

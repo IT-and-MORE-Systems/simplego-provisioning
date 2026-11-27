@@ -58,6 +58,10 @@ pub struct Status {
     pub file_import: bool,
     pub file_id: Option<String>,
     pub network_mode: Option<String>,
+    /// Format document section 12.1: what the app reports after importing
+    /// a file with a `features` object.
+    pub features_profile: Option<String>,
+    pub features_fixed: Option<String>,
 }
 
 pub fn status(m: &BTreeMap<String, String>) -> Result<Status, String> {
@@ -80,6 +84,8 @@ pub fn status(m: &BTreeMap<String, String>) -> Result<Status, String> {
             == Some("yes"),
         file_id: m.get("file_id").cloned(),
         network_mode: m.get("network_mode").cloned(),
+        features_profile: m.get("features_profile").cloned(),
+        features_fixed: m.get("features_fixed").cloned(),
     })
 }
 
@@ -116,6 +122,18 @@ mod tests {
         let s = status(&m).unwrap();
         assert!(s.file_import);
         assert_eq!(s.file_id.as_deref(), Some("ab"));
+        assert_eq!(s.features_profile, None);
+        // features_fixed holds commas without a space; an empty value too.
+        let m = parse_bundle(
+            "Result: Bundle[{activation=yes, setup=open, file_import=yes, features_profile=82c3232f78958958, features_fixed=calls:on,groups:off}]",
+        )
+        .unwrap();
+        let s = status(&m).unwrap();
+        assert_eq!(s.features_profile.as_deref(), Some("82c3232f78958958"));
+        assert_eq!(s.features_fixed.as_deref(), Some("calls:on,groups:off"));
+        let m =
+            parse_bundle("Result: Bundle[{activation=yes, setup=open, features_fixed=}]").unwrap();
+        assert_eq!(status(&m).unwrap().features_fixed.as_deref(), Some(""));
         assert!(status(&parse_bundle("Result: Bundle[{setup=maybe}]").unwrap()).is_err());
     }
 }

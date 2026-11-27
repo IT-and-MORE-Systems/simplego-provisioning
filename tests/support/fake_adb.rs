@@ -87,6 +87,12 @@ struct Provider {
     network_mode: Option<String>,
     /// SHA-256 of the last code, so the test can compare it with the shown code.
     code_sha256: Option<String>,
+    /// `features_profile` and `features_fixed` of the imported file, as an
+    /// app reports them (format document section 12.1).
+    features_profile: Option<String>,
+    features_fixed: Option<String>,
+    /// A test sets this to make the app report another profile.
+    report_wrong_profile: bool,
 }
 
 #[derive(Serialize, Deserialize, Default, Clone)]
@@ -894,6 +900,15 @@ fn provider_call(st: &mut State, m: &str, rest: &[&str]) -> Reply {
                 if let Some(n) = &p.network_mode {
                     v.push(("network_mode", n.clone()));
                 }
+                if let (Some(fp), Some(ff)) = (&p.features_profile, &p.features_fixed) {
+                    let fp = if p.report_wrong_profile {
+                        "0000000000000000".to_string()
+                    } else {
+                        fp.clone()
+                    };
+                    v.push(("features_profile", fp));
+                    v.push(("features_fixed", ff.clone()));
+                }
             }
             ok(bundle(&v))
         }
@@ -909,9 +924,13 @@ fn provider_call(st: &mut State, m: &str, rest: &[&str]) -> Reply {
             }
             if let Some(file) = p.pending_file.take() {
                 match decrypt(&file, code.as_bytes()) {
-                    Ok((fid, mode)) => {
+                    Ok((fid, mode, features)) => {
                         p.file_id = Some(fid);
                         p.network_mode = Some(mode);
+                        if let Some((fp, ff)) = features {
+                            p.features_profile = Some(fp);
+                            p.features_fixed = Some(ff);
+                        }
                     }
                     Err(e) => return ok(bundle(&[("result", format!("error: {e}"))])),
                 }
@@ -924,8 +943,26 @@ fn provider_call(st: &mut State, m: &str, rest: &[&str]) -> Reply {
     }
 }
 
+/// The status values of section 12.1, computed as an app does: SHA-256 over
+/// the canonical JSON of the object (a `serde_json::Value` map is sorted),
+/// first 16 hex characters; the `on` and `off` switches sorted by name.
+fn features_status(f: &serde_json::Value) -> Option<(String, String)> {
+    let m = f.as_object()?;
+    let canon = serde_json::to_vec(f).ok()?;
+    let d = ring::digest::digest(&ring::digest::SHA256, &canon);
+    let hex: String = d.as_ref().iter().map(|b| format!("{b:02x}")).collect();
+    let fixed: Vec<String> = m
+        .iter()
+        .filter(|(k, v)| *k != "profile_version" && (*v == "on" || *v == "off"))
+        .map(|(k, v)| format!("{k}:{}", v.as_str().unwrap_or("")))
+        .collect();
+    Some((hex[..16].to_string(), fixed.join(",")))
+}
+
+type Imported = (String, String, Option<(String, String)>);
+
 /// Format section 4 and 5: Argon2id from the code, AES-256-GCM, header as AAD.
-fn decrypt(file: &[u8], code: &[u8]) -> Result<(String, String), String> {
+fn decrypt(file: &[u8], code: &[u8]) -> Result<Imported, String> {
     if file.len() < 66 + 16 + 64 || &file[0..5] != b"SXACT" {
         return Err("bad_format".into());
     }
@@ -952,6 +989,7 @@ fn decrypt(file: &[u8], code: &[u8]) -> Result<(String, String), String> {
     Ok((
         v["file_id"].as_str().unwrap_or("").to_string(),
         v["network_mode"].as_str().unwrap_or("").to_string(),
+        v.get("features").and_then(features_status),
     ))
 }
 

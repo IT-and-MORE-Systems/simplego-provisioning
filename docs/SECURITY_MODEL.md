@@ -11,7 +11,7 @@ protect. The exact checks and their messages are in [USAGE.md](USAGE.md).
 - The customer's configuration: servers, support address and network mode,
   delivered only to that customer's installation.
 - The operator's secrets: the activation signing key, the customers' update
-  keys and the fleet records in the admin store.
+  keys and the fleet records in the admin store, and the store's backups.
 - The operator's network identity: every download goes over Tor.
 
 ## Threats considered
@@ -26,7 +26,7 @@ protect. The exact checks and their messages are in [USAGE.md](USAGE.md).
   the clear net while it is installed.
 - A forged, altered or replayed activation or update file, or a
   configuration that would make an app connect outside Tor.
-- A lost or copied admin laptop.
+- A lost or copied admin laptop, and a lost or damaged admin store.
 - An operator mistake: the wrong phone, a customer's phone, a second
   process writing the store.
 
@@ -117,16 +117,93 @@ still holds and enables the verifier again last.
 - The TEST ONLY key that signs the test vectors is refused for issuing by its
   key id; release builds of the apps must not trust it.
 
+## Feature profile and customer directory
+
+- Both are optional objects inside the signed and encrypted payload (format
+  section 12), so nobody without our signing key can add, change or remove
+  a switch or a group, and nobody without the code or the update key can
+  read them.
+- Inside both objects the rules fail closed: an unknown name, value or
+  field, a duplicate key, `null` or an array instead of an object refuses
+  the whole file, so an app never silently skips a switch or a group. An
+  app built before section 12 would ignore both objects (unknown top-level
+  fields are ignored), so no app may report the file import to `sxprov`
+  before it implements section 12, and `deliver` refuses a fixed profile or
+  a directory entry when the app does not report the file import, before
+  anything is issued.
+- `off` means off in the app's backend, not only hidden; `deliver` compares
+  the `features_profile` and `features_fixed` the app reports with what it
+  issued and fails on a difference.
+- Group links are accepted only as short links whose server is one of the
+  customer's SMP servers in the same file, and they follow the network
+  mode rule, so a directory can never send a device to a server that is
+  not the customer's or around Tor. The SimpleX core joins on the link's own
+  server.
+- Display names and group names must be valid SimpleX names, so the set-up
+  on the device cannot fail on a name after the import.
+- What our side keeps: the feature profile per customer and device class,
+  and per customer set only a random `set_id`, a SHA-256 of the group list,
+  the number of groups and the role per device serial. No display name and
+  no group link is stored on the admin laptop; the display name exists only
+  inside the encrypted file, which is not kept either. The organizer
+  profile that creates the groups (a later version) is deleted after the
+  handover, so our side then holds nothing of the customer's social graph.
+
 ## The admin store
 
-- Encrypted at rest: Argon2id (64 MiB, 3 passes) from a passphrase of at
-  least 12 characters, AES-256-GCM, own header, mode 0600.
+- Encrypted at rest with AES-256-GCM under a random 256-bit store key, own
+  header with a key id, mode 0600. Nobody types the key: no password in
+  normal operation, by design.
+- The key is sealed with the laptop's TPM 2.0 (`systemd-creds --user`, no
+  PCR binding) where there is one, so a copy of the key file is useless off
+  the laptop; otherwise it is a 0600 key file, written only onto an
+  encrypted disk (dm-crypt) outside WSL. So the store rests on the disk
+  encryption, the operator's account and, with a TPM, this laptop; no longer
+  on a second secret in the operator's head.
+- A passphrase store of an earlier version is moved once with `store
+  migrate` (the passphrase typed a last time, the result checked with the
+  key read back before the passphrase file is set aside).
 - Written atomically (temporary file, fsync, rename), the previous version
-  kept as backup; a wrong passphrase changes nothing.
+  kept as `.bak`; a wrong key changes nothing.
 - An exclusive lock: a second `sxprov` process is refused at once and never
   writes.
 - Refused inside a git repository. It never holds a copy of an issued file,
-  a full code, a name or a server password.
+  a full code, a name (also no directory display name), a group link or a
+  server password.
+
+## Backups
+
+- Format v1 of every SimpleGo product: age (age-encryption.org/v1) to an
+  X25519 recipient, so automatic backups hold no secret and need none on the
+  laptop. The private key is derived from an 18-byte seed that exists only as
+  the recovery code on paper (shown once, out of the scrollback, never stored
+  or logged) and wrapped under the backup password (scrypt, work factor 20)
+  in every backup. No SimpleGo-specific cryptography.
+- A backup holds the store and its key, so whoever has a backup file and the
+  backup password or the recovery code can open every update key. The
+  copies off the laptop (USB stick, WebDAV/Nextcloud over Tor) are only as
+  strong as that password: at least 12 characters, and each guess costs an
+  attacker scrypt with 1 GiB.
+- After every write the file is read back from the destination and checked
+  in full with the file key kept in memory during encryption; a failed check
+  never deletes anything, and rotation deletes only files of our own list.
+  The monthly drill (the password typed once) proves the part that cannot be
+  checked unattended: that the seed's key opens the files.
+- Readers refuse anything the format does not allow (magic line, header,
+  stanzas, tar member types, modes, times, paths, manifest hashes) before a
+  single file is restored; a restore never writes over the live store
+  without `--replace` and a typed `REPLACE`.
+- WebDAV only over Tor (`socks5h`), `https://` or a `.onion` host; the
+  credentials in a 0600 file of their own, never in a backup.
+
+## Signing key passphrase
+
+The activation signing key stays an offline, passphrase-protected key, by
+design: `activation issue`, `activation update` and every real `deliver`
+ask for its passphrase when they sign. That is the one password typed in
+normal operation, on purpose. Test deliveries type nothing: they sign with
+the TEST ONLY key, whose passphrase comes from a file, and the store opens
+with its store key.
 
 ## Operator safety
 
@@ -144,7 +221,12 @@ still holds and enables the verifier again last.
 
 - A phone after the check: attestation proves the state at the time of the
   check.
-- The admin laptop while it runs unlocked with the store open.
+- The admin laptop while it runs unlocked: any program running as the
+  operator user can read the store key and so the store (before
+  0.2.0-alpha it also needed the store passphrase). The TPM binding
+  protects copies of the key file, not a running session.
+- A backup copy together with a weak backup password, or the paper with
+  the recovery code.
 - The operator's choice of pins: a wrong pin in the config is trusted.
 - The activation code during the one provider call: it is briefly visible in
   the process lists of the laptop and the phone.

@@ -367,6 +367,8 @@ pub fn cmd_set(explicit: Option<&Path>, key: &str, value: &str, json: bool) -> i
         }
     };
     let before = current(&cfg, key);
+    // The next backup carries the changed config (end of the command).
+    crate::activation::store::note_written();
     if let Err(e) = write_atomic(&path, &new) {
         return err(exit::CONFIG, json, &e);
     }

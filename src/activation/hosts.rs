@@ -287,43 +287,54 @@ fn is_b64url_32(s: &str) -> bool {
 }
 
 /// Strict short link grammar (format document section 7, amended
-/// 2026-11-21 10:30), a subset of simplexmq `Agent/Protocol.hs`
-/// `StrEncoding AConnShortLink`:
-/// `https://<host>/a#<key43>[?<param>(&<param>)*]`, params `h`, `p`, `c`,
-/// each at most once, `c` required.
-fn parse_short(host: &str, fragment: &str) -> Result<SupportAddress, String> {
+/// 2026-11-21 10:30; for group links section 12.4), a subset of simplexmq
+/// `Agent/Protocol.hs` `StrEncoding AConnShortLink`:
+/// `https://<host>/<t>#<key43>[?<param>(&<param>)*]`, params `h`, `p`, `c`,
+/// each at most once, `c` required. Returns the key and the server (the
+/// link host plus the `h` hosts, the `p` port, `c` as the fingerprint).
+/// Errors start with `what`.
+fn parse_short_link(
+    what: &str,
+    t: char,
+    host: &str,
+    fragment: &str,
+) -> Result<(String, ServerAddress), String> {
     if host.contains(':') {
-        return Err("support address: a port in front of /a is not accepted; use ?p=<port>".into());
+        return Err(format!(
+            "{what}: a port in front of /{t} is not accepted; use ?p=<port>"
+        ));
     }
-    classify(host).map_err(|e| format!("support address: short link host: {e}"))?;
+    classify(host).map_err(|e| format!("{what}: short link host: {e}"))?;
     let (key, query) = match fragment.split_once('?') {
         Some((k, q)) => (k, Some(q)),
         None => (fragment, None),
     };
     if key.is_empty() {
-        return Err("support address: short link without key".into());
+        return Err(format!("{what}: short link without key"));
     }
     if !is_b64url_32(key) {
-        return Err("support address: the short link key must be 43 characters of unpadded base64url (32 bytes)".into());
+        return Err(format!(
+            "{what}: the short link key must be 43 characters of unpadded base64url (32 bytes)"
+        ));
     }
     let mut hosts = vec![host.to_string()];
     let (mut h_seen, mut port, mut key_hash) = (false, None, None);
     if let Some(q) = query {
         if q.is_empty() {
-            return Err("support address: empty parameter list after ?".into());
+            return Err(format!("{what}: empty parameter list after ?"));
         }
         for pair in q.split('&') {
             let Some((name, value)) = pair.split_once('=') else {
-                return Err(
-                    "support address: malformed short link parameter (expected name=value)".into(),
-                );
+                return Err(format!(
+                    "{what}: malformed short link parameter (expected name=value)"
+                ));
             };
             if name.is_empty() || value.is_empty() {
-                return Err(
-                    "support address: malformed short link parameter (empty name or value)".into(),
-                );
+                return Err(format!(
+                    "{what}: malformed short link parameter (empty name or value)"
+                ));
             }
-            let twice = || format!("support address: short link parameter {name} appears twice");
+            let twice = || format!("{what}: short link parameter {name} appears twice");
             match name {
                 "h" => {
                     if h_seen {
@@ -332,15 +343,15 @@ fn parse_short(host: &str, fragment: &str) -> Result<SupportAddress, String> {
                     h_seen = true;
                     let v = value.replace("%2C", ",").replace("%2c", ",");
                     if v.contains('%') {
-                        return Err(
-                            "support address: h parameter: only %2C is allowed as an escape".into(),
-                        );
+                        return Err(format!(
+                            "{what}: h parameter: only %2C is allowed as an escape"
+                        ));
                     }
                     for h in v.split(',') {
                         if h.is_empty() {
-                            return Err("support address: h parameter: empty host".into());
+                            return Err(format!("{what}: h parameter: empty host"));
                         }
-                        classify(h).map_err(|e| format!("support address: h parameter: {e}"))?;
+                        classify(h).map_err(|e| format!("{what}: h parameter: {e}"))?;
                         hosts.push(h.to_string());
                     }
                 }
@@ -356,7 +367,7 @@ fn parse_short(host: &str, fragment: &str) -> Result<SupportAddress, String> {
                                 && !value.starts_with('0')
                                 && value.bytes().all(|c| c.is_ascii_digit())
                         })
-                        .ok_or("support address: p parameter: the port must be 1 to 65535, decimal, no leading zero")?;
+                        .ok_or_else(|| format!("{what}: p parameter: the port must be 1 to 65535, decimal, no leading zero"))?;
                     port = Some(n);
                 }
                 "c" => {
@@ -364,7 +375,7 @@ fn parse_short(host: &str, fragment: &str) -> Result<SupportAddress, String> {
                         return Err(twice());
                     }
                     if !is_b64url_32(value) {
-                        return Err("support address: c parameter: the server key hash must be 43 characters of unpadded base64url (32 bytes)".into());
+                        return Err(format!("{what}: c parameter: the server key hash must be 43 characters of unpadded base64url (32 bytes)"));
                     }
                     key_hash = Some(value.to_string());
                 }
@@ -379,30 +390,124 @@ fn parse_short(host: &str, fragment: &str) -> Result<SupportAddress, String> {
                         String::new()
                     };
                     return Err(format!(
-                        "support address: unknown short link parameter{shown}; only h, p and c are accepted"
+                        "{what}: unknown short link parameter{shown}; only h, p and c are accepted"
                     ));
                 }
             }
         }
     }
-    let fingerprint = key_hash
-        .ok_or("support address: short link without c (the server key hash); c is required")?;
-    Ok(SupportAddress {
-        link_prefix: format!("https://{host}"),
-        form: SupportForm::Short {
-            key: key.to_string(),
-        },
-        queues: vec![ServerAddress {
+    let fingerprint = key_hash.ok_or_else(|| {
+        format!("{what}: short link without c (the server key hash); c is required")
+    })?;
+    Ok((
+        key.to_string(),
+        ServerAddress {
             scheme: "smp".into(),
             fingerprint,
             password: None,
             hosts,
             port,
-        }],
+        },
+    ))
+}
+
+/// The support address as a short contact link (`/a#`).
+fn parse_short(host: &str, fragment: &str) -> Result<SupportAddress, String> {
+    let (key, server) = parse_short_link("support address", 'a', host, fragment)?;
+    Ok(SupportAddress {
+        link_prefix: format!("https://{host}"),
+        form: SupportForm::Short { key },
+        queues: vec![server],
     })
 }
 
-/// The link type of a short link path `<t>#...` or `<t>/#...`, or `None`
+/// A group link of `directory.groups[].link` (format document section
+/// 12.4): only the short form `https://<host>/g#<key>?...` with the
+/// support short link grammar. The core joins on the link's own server
+/// (simplexmq `Agent.hs` `getConnShortLink'`, lines 1343 to 1370), so the
+/// hosts for the mode rules are the link host plus the `h` hosts.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct GroupLink {
+    pub host: String,
+    pub key: String,
+    pub server: ServerAddress,
+}
+
+const LONG_FORM: &str =
+    "group link: the long form is not accepted; a group link is a short link https://<host>/g#...";
+const EXPECTED_G: &str = "group link: expected https://<host>/g#...";
+
+pub fn parse_group_link(link: &str) -> Result<GroupLink, String> {
+    const W: &str = "group link";
+    let is_long = |p: &str| p.starts_with("contact#") || p.starts_with("contact/#");
+    if let Some(rest) = link.strip_prefix("simplex:/") {
+        if is_long(rest) {
+            return Err(LONG_FORM.into());
+        }
+        if short_link_type(rest).is_some() {
+            return Err(format!(
+                "{W}: the simplex:/ short link form is not accepted; use https://<host>/g#..."
+            ));
+        }
+        return Err(EXPECTED_G.into());
+    }
+    let Some(rest) = link.strip_prefix("https://") else {
+        return Err(EXPECTED_G.into());
+    };
+    let (host, path) = rest.split_once('/').ok_or(EXPECTED_G)?;
+    if host.is_empty() {
+        return Err(format!("{W}: invalid link host"));
+    }
+    if is_long(path) {
+        return Err(LONG_FORM.into());
+    }
+    let Some((t, slash, fragment)) = short_link_type(path) else {
+        return Err(EXPECTED_G.into());
+    };
+    match (t, slash) {
+        ('g', false) => {
+            let (key, server) = parse_short_link(W, 'g', host, fragment)?;
+            Ok(GroupLink {
+                host: host.to_string(),
+                key,
+                server,
+            })
+        }
+        ('g', true) => Err(format!("{W}: /g/# is not accepted; write /g#")),
+        ('G', _) => Err(format!("{W}: upper case /G# is not accepted; write /g#")),
+        ('a' | 'A', _) => Err(format!("{W}: /a# is a contact address, not a group link")),
+        ('i', _) => Err(format!(
+            "{W}: /i# is a one-time invitation link, not a group link"
+        )),
+        ('c' | 'C', _) => Err(format!(
+            "{W}: /c# is a channel link; the directory takes only groups"
+        )),
+        ('r' | 'R', _) => Err(format!("{W}: /r# is a chat relay link, not a group link")),
+        _ => Err(format!("{W}: unknown short link type")),
+    }
+}
+
+/// The group link's server equals a server address: the same hosts in the
+/// same order, the same port, and `c` equal to the fingerprint (compared
+/// as bytes, the fingerprint may be padded). Section 12.4.
+pub fn same_server(link: &ServerAddress, server: &ServerAddress) -> bool {
+    let fp = b64url_decode(&link.fingerprint);
+    link.hosts == server.hosts
+        && link.port == server.port
+        && fp.is_some()
+        && fp == b64url_decode(&server.fingerprint)
+}
+
+/// A group link for messages: host and key shortened, the server masked.
+pub fn mask_group_link(g: &GroupLink) -> serde_json::Value {
+    serde_json::json!({
+        "form": format!("{}/g", mask_host(&g.host)),
+        "key": mask_host(&g.key),
+        "server": mask_server(&g.server),
+    })
+}
+
+// The link type of a short link path `<t>#...` or `<t>/#...`, or `None`
 /// if the path is not a short link.
 fn short_link_type(path: &str) -> Option<(char, bool, &str)> {
     let mut it = path.char_indices();
@@ -1197,5 +1302,223 @@ pub mod tests {
         assert_eq!(base32_decode(&base32_encode(&d)).unwrap(), d);
         assert!(base32_decode("ABC").is_none());
         assert!(base32_decode("a1").is_none());
+    }
+
+    /// A short link as simplexmq writes it (`Agent/Protocol.hs`
+    /// `StrEncoding (ConnShortLink m)`, `slEncode`): `https://` puts the
+    /// first host in front of the path and the others in `h`, `simplex:`
+    /// puts every host in `h`; `h` only with hosts, `p` only with a port,
+    /// `c` only with a key hash, the values escaped as `QSP QEscape`.
+    pub fn encode_short_link(
+        https: bool,
+        link_type: char,
+        hosts: &[&str],
+        port: &str,
+        key: &[u8],
+        key_hash: &[u8],
+    ) -> String {
+        let (authority, param_hosts) = if https {
+            (format!("https://{}", hosts[0]), &hosts[1..])
+        } else {
+            ("simplex:".to_string(), hosts)
+        };
+        let mut q: Vec<String> = Vec::new();
+        if !param_hosts.is_empty() {
+            q.push(format!("h={}", qs_escape(&param_hosts.join(","))));
+        }
+        if !port.is_empty() {
+            q.push(format!("p={}", qs_escape(port)));
+        }
+        if !key_hash.is_empty() {
+            q.push(format!(
+                "c={}",
+                qs_escape(&Base64UrlUnpadded::encode_string(key_hash))
+            ));
+        }
+        let query = if q.is_empty() {
+            String::new()
+        } else {
+            format!("?{}", q.join("&"))
+        };
+        format!(
+            "{authority}/{link_type}#{}{query}",
+            Base64UrlUnpadded::encode_string(key)
+        )
+    }
+
+    /// Byte for byte the strings of simplexmq `fdbcb24d`
+    /// `tests/AgentTests/ConnectionRequestTests.hs` lines 320 to 327
+    /// ("should serialize / parse short links"), from the same inputs:
+    /// `srv` (line 38) and `shortSrv` (line 374).
+    #[test]
+    fn short_link_writer_matches_upstream() {
+        let key = b"0123456789abcdef0123456789abcdef";
+        let kh = [215u8, b'm', 248, 251];
+        let onion = "jjbyvoemxysm7qxap7m5d5m35jzv5qq6gnlv7s4rsn7tdwwmuqciwpid.onion";
+        let srv = ["smp.simplex.im", onion];
+        let cases = [
+            (true, 'a', &srv[..], "5223", &kh[..], "https://smp.simplex.im/a#MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY?h=jjbyvoemxysm7qxap7m5d5m35jzv5qq6gnlv7s4rsn7tdwwmuqciwpid.onion&p=5223&c=1234-w"),
+            (true, 'g', &srv[..], "5223", &kh[..], "https://smp.simplex.im/g#MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY?h=jjbyvoemxysm7qxap7m5d5m35jzv5qq6gnlv7s4rsn7tdwwmuqciwpid.onion&p=5223&c=1234-w"),
+            (true, 'a', &srv[..1], "", &[][..], "https://smp.simplex.im/a#MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY"),
+            (false, 'a', &srv[..], "5223", &kh[..], "simplex:/a#MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY?h=smp.simplex.im%2Cjjbyvoemxysm7qxap7m5d5m35jzv5qq6gnlv7s4rsn7tdwwmuqciwpid.onion&p=5223&c=1234-w"),
+            (false, 'g', &srv[..], "5223", &kh[..], "simplex:/g#MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY?h=smp.simplex.im%2Cjjbyvoemxysm7qxap7m5d5m35jzv5qq6gnlv7s4rsn7tdwwmuqciwpid.onion&p=5223&c=1234-w"),
+            (false, 'a', &srv[..1], "", &[][..], "simplex:/a#MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY?h=smp.simplex.im"),
+        ];
+        for (https, t, hosts, port, kh, want) in cases {
+            assert_eq!(encode_short_link(https, t, hosts, port, key, kh), want);
+        }
+        // Upstream's 4-byte test key hash is not a server key hash, so our
+        // strict parser refuses those strings; with 32 bytes it reads ours.
+        assert!(parse_group_link(cases[1].5)
+            .unwrap_err()
+            .contains("c parameter"));
+        let kh32 = sha256("TEST-ONLY-UPSTREAM-KH");
+        let ours = encode_short_link(true, 'g', &srv, "5223", key, &kh32);
+        let g = parse_group_link(&ours).unwrap();
+        assert_eq!(g.server.hosts, srv.to_vec());
+        assert_eq!(g.server.port, Some(5223));
+        assert_eq!(g.key, Base64UrlUnpadded::encode_string(key));
+    }
+
+    /// A synthetic group link on `server` (its hosts, port and key hash).
+    pub fn group_link_on(server: &ServerAddress, key_seed: &str) -> String {
+        let hosts: Vec<&str> = server.hosts.iter().map(String::as_str).collect();
+        let port = server.port.map(|p| p.to_string()).unwrap_or_default();
+        encode_short_link(
+            true,
+            'g',
+            &hosts,
+            &port,
+            &sha256(key_seed),
+            &b64url_decode(&server.fingerprint).unwrap(),
+        )
+    }
+
+    #[test]
+    fn group_links_accepted() {
+        let o = fake_onion("testonlysmpa");
+        let fp = key_hash("TEST-ONLY-SMP-1");
+        for addr in [
+            format!("smp://{fp}:TEST-ONLY-PASSWORD@{o}"),
+            format!("smp://{fp}=:TEST-ONLY-PASSWORD@{o},smp-a.example.invalid:5223"),
+        ] {
+            let s = parse_server(&addr, "smp").unwrap();
+            let link = group_link_on(&s, "TEST-ONLY-GROUP-LINK-KEY-1");
+            assert!(link.starts_with(&format!("https://{o}/g#")), "{link}");
+            let g = parse_group_link(&link).unwrap();
+            assert_eq!(g.server.hosts, s.hosts);
+            assert!(same_server(&g.server, &s), "{link}");
+            let m = mask_group_link(&g).to_string();
+            assert!(!m.contains(&o) && !m.contains(&g.key), "{m}");
+        }
+        // Raw comma or %2C in h, parameters in any order.
+        let a = format!(
+            "https://{o}/g#{}?h=smp-a.example.invalid%2Csmp-b.example.invalid&c={fp}&p=443",
+            fake43("K")
+        );
+        let g = parse_group_link(&a).unwrap();
+        assert_eq!(g.server.hosts.len(), 3);
+        assert_eq!(g.server.port, Some(443));
+    }
+
+    #[test]
+    fn group_link_server_match() {
+        let o = fake_onion("testonlysmpa");
+        let fp = key_hash("TEST-ONLY-SMP-1");
+        let s = parse_server(
+            &format!("smp://{fp}:TEST-ONLY-PASSWORD@{o},smp-a.example.invalid"),
+            "smp",
+        )
+        .unwrap();
+        let g = |hosts: &str, port: &str, kh: &str| {
+            let p = if port.is_empty() {
+                String::new()
+            } else {
+                format!("&p={port}")
+            };
+            let (first, rest) = hosts.split_once(',').unwrap_or((hosts, ""));
+            let h = if rest.is_empty() {
+                String::new()
+            } else {
+                format!("h={rest}&")
+            };
+            parse_group_link(&format!("https://{first}/g#{}?{h}c={kh}{p}", fake43("K")))
+                .unwrap()
+                .server
+        };
+        let both = format!("{o},smp-a.example.invalid");
+        assert!(same_server(&g(&both, "", &fp), &s));
+        // The order of the hosts, a missing host, a port, another key hash.
+        assert!(!same_server(
+            &g(&format!("smp-a.example.invalid,{o}"), "", &fp),
+            &s
+        ));
+        assert!(!same_server(&g(&o, "", &fp), &s));
+        assert!(!same_server(&g(&both, "5223", &fp), &s));
+        assert!(!same_server(
+            &g(&both, "", &key_hash("TEST-ONLY-SMP-2")),
+            &s
+        ));
+    }
+
+    #[test]
+    fn group_links_refused() {
+        let o = fake_onion("testonlysmpa");
+        let key = fake43("TEST-ONLY-LINK-KEY");
+        let kh = key_hash("TEST-ONLY-SMP-1");
+        let c = format!("c={kh}");
+        let long = long_support("simplex:", &[&o]);
+        let cases: Vec<(String, &str)> = vec![
+            (format!("{long}&data=%7B%7D"), "long form is not accepted"),
+            (
+                long.replace("simplex:", &format!("https://{o}")),
+                "long form is not accepted",
+            ),
+            (
+                format!("simplex:/g#{key}?h={o}&{c}"),
+                "simplex:/ short link form",
+            ),
+            (format!("https://{o}/G#{key}?{c}"), "upper case /G#"),
+            (format!("https://{o}/g/#{key}?{c}"), "/g/# is not accepted"),
+            (format!("https://{o}/a#{key}?{c}"), "contact address"),
+            (
+                format!("https://{o}/i#LINKID/{key}?{c}"),
+                "one-time invitation",
+            ),
+            (format!("https://{o}/c#{key}?{c}"), "channel link"),
+            (format!("https://{o}/r#{key}?{c}"), "chat relay link"),
+            (
+                format!("https://{o}/x#{key}?{c}"),
+                "unknown short link type",
+            ),
+            (
+                format!("https://{o}:5223/g#{key}?{c}"),
+                "port in front of /g",
+            ),
+            (format!("https://{o}/g#{key}"), "without c"),
+            (
+                format!("https://{o}/g#{key}?{c}&x=1"),
+                "unknown short link parameter",
+            ),
+            (
+                format!("https://{o}/g#{}?{c}", &key[..42]),
+                "short link key must be",
+            ),
+            (format!("https://{o}/g#?{c}"), "without key"),
+            (format!("https://{o}/g#{key}?{c}&{c}"), "appears twice"),
+            (format!("https://bad.onion/g#{key}?{c}"), "short link host"),
+            (format!("https:///g#{key}?{c}"), "invalid link host"),
+            (format!("https://{o}/group"), "expected https://"),
+            ("http://x.example.invalid/g#k".into(), "expected https://"),
+        ];
+        for (link, want) in cases {
+            let e = parse_group_link(&link).unwrap_err();
+            assert!(e.starts_with("group link: "), "{e}");
+            assert!(e.contains(want), "{link}: {e}");
+            assert!(
+                !e.contains(&o) && !e.contains(&key[..20]) && !e.contains(&kh[..20]),
+                "{e}"
+            );
+        }
     }
 }

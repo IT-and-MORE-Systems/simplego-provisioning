@@ -9,7 +9,7 @@ use crate::activation::payload::tests::sample;
 use crate::activation::payload::Kind;
 use crate::activation::rng::SeededRand;
 use crate::activation::store::tests::one_at_a_time;
-use crate::activation::store::{Store, TEST_KDF};
+use crate::activation::store::tests::{init_test_store, open_test_store};
 use crate::apk::testapk::{self, Spec, TestKey};
 use crate::attest::tests as at;
 use crate::fdroid::testrepo;
@@ -22,7 +22,6 @@ use std::sync::OnceLock;
 
 const SERIAL: &str = "TESTSERIAL6A01";
 const OTHER: &str = "OTHERPHONE9P99";
-const STORE_PASS: &str = "TEST-ONLY store passphrase";
 const KEY_PASS: &str = "TEST-ONLY-PASSPHRASE";
 const MESSENGER: &str = "org.example.messenger";
 const ORBOT: &str = "org.torproject.android";
@@ -100,7 +99,6 @@ impl Ui for TestUi {
     fn secret(&mut self, what: Secret) -> Result<Zeroizing<String>, String> {
         Ok(Zeroizing::new(
             match what {
-                Secret::StorePassphrase => STORE_PASS,
                 Secret::SigningKeyPassphrase => KEY_PASS,
             }
             .to_string(),
@@ -200,13 +198,7 @@ impl Fx {
         .unwrap();
         std::fs::write(dir.join("support.txt"), format!("{}\n", p.support_address)).unwrap();
         let store = dir.join("store/admin.sxdb");
-        Store::init(
-            &store,
-            STORE_PASS,
-            TEST_KDF,
-            &mut SeededRand::new(tag.as_bytes()),
-        )
-        .unwrap();
+        drop(init_test_store(&store, tag.as_bytes()));
         let cfg_text = format!(
             "trust_cache_dir = \"{d}/trust\"\nadb_path = \"{d}/adb\"\nfastboot_path = \"\"\nagent_apk = \"{agent}\"\n\
              agent_signing_cert_sha256 = \"{a5}\"\nadmin_store_path = \"{store}\"\n\
@@ -298,6 +290,8 @@ impl Fx {
             allow_outdated_os: false,
             fdroid_apk: None,
             json: false,
+            features: None,
+            directory: None,
         };
         Fx {
             dir,
@@ -394,7 +388,7 @@ impl Fx {
     }
 
     fn records(&self) -> Vec<Delivery> {
-        let s = Store::open(&self.dir.join("store/admin.sxdb"), STORE_PASS).unwrap();
+        let s = open_test_store(&self.dir.join("store/admin.sxdb"));
         s.data.deliveries.clone()
     }
 
@@ -509,7 +503,7 @@ fn fresh_grapheneos_phone_code_only_with_orbot() {
     assert_eq!(d.calculator_disabled.as_deref(), Some(CALC));
     assert_eq!(d.attestation, "OS PASS, messenger UNVERIFIED");
     // The issue is in the fleet log with the serial.
-    let st = Store::open(&fx.dir.join("store/admin.sxdb"), STORE_PASS).unwrap();
+    let st = open_test_store(&fx.dir.join("store/admin.sxdb"));
     assert_eq!(st.data.issues.len(), 1);
     assert_eq!(st.data.issues[0].file_id, d.file_id.clone().unwrap());
     fx.write_report_log("fresh-grapheneos-phone");
@@ -531,6 +525,196 @@ fn provider_with_file_import() {
     assert!(fx.calls().iter().any(|c| c.ends_with("content write --uri content://org.example.messenger.activation/file < (file on standard input)")));
     assert_clean_log(&fx, &r);
     fx.write_report_log("provider-with-file-import");
+}
+
+/// `--features` with the example of section 12.1 (it fixes switches).
+fn with_features(fx: &Fx) -> DeliverArgs {
+    let p = fx.dir.join("features.json");
+    std::fs::write(
+        &p,
+        r#"{"profile_version":1,"groups":"off","channels":"off","preset_servers":"off","calls":"on","files":"on","voice_messages":"on","calculator_disguise":"on"}"#,
+    )
+    .unwrap();
+    let mut a = fx.args.clone();
+    a.features = Some(p);
+    a
+}
+
+/// `--directory` with one group on the delivery's SMP server.
+fn with_directory(fx: &Fx, a: &mut DeliverArgs) {
+    let s = sample(Kind::Activation, NetworkMode::TorRequired);
+    let server = crate::activation::hosts::parse_server(&s.servers.smp[0], "smp").unwrap();
+    let link =
+        crate::activation::hosts::tests::group_link_on(&server, "TEST-ONLY-GROUP-LINK-KEY-1");
+    let p = fx.dir.join("directory.json");
+    std::fs::write(
+        &p,
+        json!({"display_name": "TEST Anna", "role": "owner",
+               "groups": [{"name": "TEST Kanzlei", "link": link, "direct_contacts": true}]})
+        .to_string(),
+    )
+    .unwrap();
+    a.directory = Some(p);
+}
+
+/// Section 12.4: a fixed profile or a directory entry needs the file
+/// import; without it the delivery stops after step 8, nothing issued.
+#[test]
+fn fixed_features_without_file_import_stop_after_step_8() {
+    let _g = one_at_a_time();
+    for (tag, dir) in [("featnoimport", false), ("dirnoimport", true)] {
+        let fx = Fx::new(tag);
+        let mut a = if dir {
+            fx.args.clone()
+        } else {
+            with_features(&fx)
+        };
+        if dir {
+            with_directory(&fx, &mut a);
+        }
+        let r = fx.deliver_with(&a, Ok(true));
+        assert_eq!(r.code, exit::DELIVERY_FAILED, "{}", r.out);
+        assert!(r.out.contains("DELIVERY FAILED at step 8"), "{}", r.out);
+        let why = if dir {
+            "this phone has a directory entry (role owner, 1 group(s))"
+        } else {
+            "feature profile fixes calculator_disguise:on,calls:on,channels:off"
+        };
+        assert!(r.out.contains(why), "{}", r.out);
+        assert!(r.out.contains("Nothing was issued"), "{}", r.out);
+        assert!(
+            r.out.contains("network lock and the apps installed"),
+            "{}",
+            r.out
+        );
+        assert!(r.out.contains("undeliver"), "{}", r.out);
+        assert!(r.shown.is_empty(), "no code shown");
+        let d = &fx.records()[0];
+        assert_eq!(d.result, "failed at step 8");
+        assert!(d.file_id.is_none() && d.code_masked.is_none());
+        let st = open_test_store(&fx.dir.join("store/admin.sxdb"));
+        assert!(st.data.issues.is_empty(), "something was issued");
+        assert!(st.data.customers.is_empty());
+        // The messenger is installed, nothing after it ran.
+        assert!(!fx.calls().iter().any(|c| c.contains("--method activate")));
+        assert_clean_log(&fx, &r);
+    }
+    // A profile that fixes nothing needs no file import.
+    let fx = Fx::new("featnothingfixed");
+    let p = fx.dir.join("features.json");
+    std::fs::write(&p, r#"{"profile_version":1,"groups":"ask"}"#).unwrap();
+    let mut a = fx.args.clone();
+    a.features = Some(p);
+    let r = fx.deliver_with(&a, Ok(true));
+    assert_eq!(r.code, exit::UNVERIFIED, "{}", r.out);
+    assert!(!fx.records()[0].file_transferred);
+}
+
+/// With the file import the profile is applied, recorded and checked in
+/// step 14 against what the app reports.
+#[test]
+fn fixed_features_with_file_import_are_checked_in_step_14() {
+    let _g = one_at_a_time();
+    let fx = Fx::new("featimport");
+    fx.edit(|s| s["provider"]["file_import"] = json!(true));
+    let mut a = with_features(&fx);
+    with_directory(&fx, &mut a);
+    let r = fx.deliver_with(&a, Ok(true));
+    assert_eq!(r.code, exit::UNVERIFIED, "{}", r.out);
+    assert!(
+        r.out
+            .contains("feature profile applied: features_profile 82c3232f78958958"),
+        "{}",
+        r.out
+    );
+    assert!(
+        r.out
+            .contains("file import: customer TEST-6A-0001's feature profile fixes"),
+        "{}",
+        r.out
+    );
+    let d = &fx.records()[0];
+    assert!(d.file_transferred);
+    assert_eq!(d.features_profile.as_deref(), Some("82c3232f78958958"));
+    assert_eq!(
+        d.directory_role,
+        Some(crate::activation::directory::Role::Owner)
+    );
+    let st = open_test_store(&fx.dir.join("store/admin.sxdb"));
+    let c = &st.data.customers["TEST-6A-0001"];
+    assert!(c.features.phone.is_some());
+    let set = c.directory_set.as_ref().unwrap();
+    assert_eq!(set.devices.len(), 1);
+    assert_eq!(set.devices[0].serial, SERIAL);
+    let all = serde_json::to_string(&st.data).unwrap();
+    assert!(
+        !all.contains("TEST Anna") && !all.contains("/g#"),
+        "names or links stored"
+    );
+    assert_clean_log(&fx, &r);
+    fx.write_report_log("features-with-file-import");
+
+    // The app reports another profile: the final check fails.
+    let fx = Fx::new("featwrong");
+    fx.edit(|s| {
+        s["provider"]["file_import"] = json!(true);
+        s["provider"]["report_wrong_profile"] = json!(true);
+    });
+    let r = fx.deliver_with(&with_features(&fx), Ok(true));
+    assert_eq!(r.code, exit::DELIVERY_CHECK, "{}", r.out);
+    assert!(
+        r.out
+            .contains("reports features_profile Some(\"0000000000000000\")"),
+        "{}",
+        r.out
+    );
+    assert_eq!(fx.records()[0].result, "failed at step 14");
+}
+
+#[test]
+fn dry_run_names_the_file_import_need() {
+    let _g = one_at_a_time();
+    let fx = Fx::new("featdry");
+    let mut a = with_features(&fx);
+    a.dry_run = true;
+    let r = fx.deliver_with(&a, Ok(true));
+    assert_eq!(r.code, exit::OK, "{}", r.out);
+    assert!(
+        r.out
+            .contains("file import: customer TEST-6A-0001's feature profile fixes"),
+        "{}",
+        r.out
+    );
+    assert!(
+        r.out.contains("unknown until the messenger is installed"),
+        "{}",
+        r.out
+    );
+    // Refused before anything: a desktop-only switch on, a bad directory.
+    fx.clear_calls();
+    let p = fx.dir.join("bad.json");
+    std::fs::write(&p, r#"{"profile_version":1,"vault":"on"}"#).unwrap();
+    let mut b = fx.args.clone();
+    b.features = Some(p.clone());
+    let r = fx.deliver_with(&b, Ok(true));
+    assert_eq!(r.code, exit::ACTIVATION_INPUT, "{}", r.out);
+    assert!(
+        r.out.contains("vault exists only on the desktop"),
+        "{}",
+        r.out
+    );
+    std::fs::write(
+        &p,
+        r#"{"display_name":"TEST. Anna","role":"member","groups":[]}"#,
+    )
+    .unwrap();
+    let mut b = fx.args.clone();
+    b.directory = Some(p);
+    let r = fx.deliver_with(&b, Ok(true));
+    assert_eq!(r.code, exit::ACTIVATION_INPUT, "{}", r.out);
+    assert!(r.out.contains("U+002E"), "{}", r.out);
+    // Neither run reached the phone.
+    assert!(fx.calls().is_empty(), "{:?}", fx.calls());
 }
 
 #[test]
@@ -2194,7 +2378,7 @@ fn discard_test_setup_refusals() {
     assert!(out.contains("throwaway test config"), "{out}");
     // A store that holds a real delivery record: not a test store.
     let path = fx.dir.join("store/admin.sxdb");
-    let mut st = Store::open(&path, STORE_PASS).unwrap();
+    let mut st = open_test_store(&path);
     let mut real = st.data.deliveries[0].clone();
     real.delivery_id = "ff".repeat(16);
     real.serial = "REALPHONE0001".into();
@@ -2206,7 +2390,7 @@ fn discard_test_setup_refusals() {
     assert_eq!(c, exit::UNDELIVER, "{out}");
     assert!(out.contains("only for a throwaway test store"), "{out}");
     // The record itself is not a test delivery.
-    let mut st = Store::open(&path, STORE_PASS).unwrap();
+    let mut st = open_test_store(&path);
     st.data.deliveries.remove(0);
     let last = st.data.deliveries.len() - 1;
     st.data.deliveries[last].test = false;
@@ -2216,7 +2400,7 @@ fn discard_test_setup_refusals() {
     assert_eq!(c, exit::UNDELIVER, "{out}");
     assert!(out.contains("is not a test delivery"), "{out}");
     // An issue signed with another key in the store.
-    let mut st = Store::open(&path, STORE_PASS).unwrap();
+    let mut st = open_test_store(&path);
     let last = st.data.deliveries.len() - 1;
     st.data.deliveries[last].test = true;
     st.data.issues[0].key_id = "00".repeat(16);

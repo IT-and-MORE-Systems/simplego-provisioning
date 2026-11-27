@@ -11,10 +11,19 @@ target/
 config/provisioning.toml
 *.local.toml
 
-# The encrypted admin store (update keys, fleet records), its backup and lock
+# The encrypted admin store (update keys, fleet records), its backup, lock,
+# store key (file or TPM-sealed) and the passphrase copy of `store migrate`
 *.sxdb
 *.sxdb.bak
 *.sxdb.lock
+*.sxdb.key
+*.sxdb.key.cred
+*.sxdb.v1-before-store-key
+*.sxdb.backup.json
+*.sxdb.before-restore-*
+# Backup files and WebDAV credentials
+bk-*.bin
+*.cred
 
 # Activation and update files issued for customers. Committed exception:
 # the TEST ONLY vectors.

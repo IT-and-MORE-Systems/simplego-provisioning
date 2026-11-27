@@ -18,10 +18,10 @@ has run on a real phone. The command reference is [USAGE.md](USAGE.md).
 ## Version and build number
 
 The version is `version` in `Cargo.toml` (`MAJOR.MINOR.PATCH-stage`, today
-`0.1.0-alpha`). The build number is `BUILD` in `src/names.rs`; a release build
+`0.2.0-alpha`). The build number is `BUILD` in `src/names.rs`; a release build
 may set it with `SXPROV_BUILD_NUMBER` at build time. `sxprov --version` prints
-"SimpleGo Provisioning 0.1.0 alpha (build N)", and the delivery and flash
-records keep `0.1.0-alpha+N` as `sxprov_version`. Every release has a git tag
+"SimpleGo Provisioning 0.2.0 alpha (build N)", and the delivery and flash
+records keep `0.2.0-alpha+N` as `sxprov_version`, backups as `app_version`. Every release has a git tag
 `vX.Y.Z-stage` and a file in [release-info/](release-info/).
 
 ## Rust tool
@@ -51,9 +51,21 @@ Tests need no phone:
     cargo fmt --check
     cargo clippy --all-targets -- -D warnings
 
-Argon2id with the real parameters is slow without optimisation, so
-`Cargo.toml` builds `argon2` and `blake2` with `opt-level = 3` in dev and
-test builds too.
+Argon2id and scrypt with the real parameters are slow without
+optimisation, so `Cargo.toml` builds `argon2`, `blake2`, `scrypt`, `salsa20`,
+`pbkdf2` and `sha2` with `opt-level = 3` in dev and test builds too.
+
+The backup format is cross-checked with the official `age` tool (for example
+unpacked from Debian's signed `age` package):
+
+    X=$(mktemp -d)
+    SXPROV_CROSS_DIR=$X cargo test cross_export -- --ignored
+    python3 -I tools/age_crosscheck.py /path/to/age /path/to/age-keygen $X
+    SXPROV_CROSS_DIR=$X cargo test cross_import -- --ignored --nocapture
+
+The script has the tool open our files (the V1 identity, the work factor 20
+wrapped seed through a pseudo terminal) and write its own, which
+`cross_import` then opens with our reader.
 
 The CI workflow (`.github/workflows/ci.yml`) runs the same on every push and
 pull request: format, clippy, all tests, and the musl release build. It needs

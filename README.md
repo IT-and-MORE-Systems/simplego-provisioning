@@ -1,6 +1,4 @@
-<p align="center">
-  <img src=".github/assets/simplego_simplego-provisioning_banner.png" alt="SimpleGo Provisioning" width="1200" height="250">
-</p>
+<p align="center"><img src=".github/assets/simplego_provisioning_banner.png" alt="SimpleGo Provisioning" width="100%"></p>
 
 <h1 align="center">SimpleGo Provisioning</h1>
 
@@ -11,7 +9,7 @@
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-AGPL--3.0-blue.svg" alt="License"></a>
-  <a href="#status"><img src="https://img.shields.io/badge/version-0.1.0--alpha-orange.svg" alt="Version"></a>
+  <a href="#status"><img src="https://img.shields.io/badge/version-0.2.0--alpha-orange.svg" alt="Version"></a>
   <a href="#getting-started"><img src="https://img.shields.io/badge/platform-Debian%2013%20x86__64-lightgrey.svg" alt="Platform"></a>
   <a href="https://simplego.dev"><img src="https://img.shields.io/badge/web-simplego.dev-blue.svg" alt="Website"></a>
 </p>
@@ -32,7 +30,8 @@ It is built around one rule: nothing is trusted because the phone says so. The O
 | **APK checks** | Our own APK reader: signature block (v3.1, v3, v2), content digest over the whole file, signer pinned in the config; the installed `base.apk` read again after the install and compared with the package manager's record. | A wrong or swapped APK, a package that differs from the checked file. |
 | **Network lock** | The always-on VPN with lockdown is proven at run time before any other app is installed; Android's app link verifier is disabled first. | An app announcing itself to the clear net at install time. |
 | **Activation files** | Ed25519 signature, AES-256-GCM under the activation code (Argon2id) or the customer's update key, strict address rules, replay protection by sequence. | A forged or altered configuration, a configuration that leaks to clearnet servers. |
-| **Admin store** | Encrypted at rest (Argon2id, AES-256-GCM), atomic writes, exclusive lock, never inside a repository. | Update keys and fleet records on a lost or copied laptop. |
+| **Admin store** | Encrypted at rest (AES-256-GCM) under a random store key sealed with the TPM or kept on the encrypted disk, atomic writes, exclusive lock, never inside a repository. | Update keys and fleet records on a lost or copied laptop. |
+| **Backups** | Automatic, after every store write and daily, age-encrypted to a public key (SimpleGo backup format v1), read back and checked, rotated; local and off the laptop (USB, WebDAV over Tor); monthly restore drill; recovery code shown once. | Losing the store, and with it every customer's update key. |
 | **Network** | Every download over Tor (`socks5h`), no clearnet fallback; GrapheneOS images checked by signature. | Leaks of the operator's address, tampered downloads. |
 
 ---
@@ -81,7 +80,25 @@ sxprov deliver --serial SERIAL --apk messenger.apk --customer-ref C-1001 --netwo
 
 ## Status
 
-Version `0.1.0-alpha`. Verification, delivery (with the network lock and the normal SimpleX app) and the GrapheneOS status and download have run on a Pixel 6a with GrapheneOS; what has not run on a phone yet is listed in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#device-tests).
+Version `0.2.0-alpha`. Verification, delivery (with the network lock and the normal SimpleX app) and the GrapheneOS status and download have run on a Pixel 6a with GrapheneOS; what has not run on a phone yet is listed in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md#device-tests). The store key and the backups (new in 0.2.0-alpha) are tested on the laptop side, the backup format also against the official `age` tool; the TPM-sealed store key has not run on the admin laptop yet.
+
+---
+
+## The SimpleGo security suite
+
+SimpleGo Provisioning is one part of the SimpleGo security suite:
+
+| Part | Repository | What it does |
+|---|---|---|
+| SimpleGo Messenger | https://github.com/IT-and-MORE-Systems/simplego-messenger | The messenger on the phone, today on a Pixel with GrapheneOS; the iPhone app is in preparation |
+| SimpleGo Desktop | https://github.com/IT-and-MORE-Systems/simplego-messenger/tree/main/apps/multiplatform/desktop | The same messenger on the laptop; runs inside SimpleGo OS |
+| SimpleGo OS | https://github.com/IT-and-MORE-Systems/simplego-os | The hardened laptop system; off means encrypted |
+| SimpleGo Phone | https://github.com/IT-and-MORE-Systems/simplego-phone | Our own phone with an ESP32-P4 and a touchscreen; in development |
+| SimpleGo hardware client | https://github.com/IT-and-MORE-Systems/SimpleGo | The ESP32 client: dedicated secure communication devices |
+| SimpleGo Provisioning | https://github.com/IT-and-MORE-Systems/simplego-provisioning | The admin tool: checks, prepares, activates and delivers every device of a customer, sets its options, prepares its groups and directory |
+| SimpleGo Distribution | https://github.com/IT-and-MORE-Systems/simplego-distribution | Install images and packages, built from source |
+
+Homepage: https://simplego.dev
 
 ---
 

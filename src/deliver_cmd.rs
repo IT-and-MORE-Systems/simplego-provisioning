@@ -5,12 +5,12 @@
 //!
 //! Real deliveries keep every prompt (passphrases without echo, typed
 //! confirmations) and show the activation code only on a terminal. With
-//! `--test-delivery`, and only then, the passphrases come from files, `--yes`
+//! `--test-delivery`, and only then, the signing key passphrase comes from a
+//! file (the store opens with its store key, nothing is typed), `--yes`
 //! replaces the typed confirmations (never the STALE confirmation of the
 //! revocation list), and the code goes to standard output.
 
 use crate::activation::rng::SystemRand;
-use crate::activation::store::{Store, STORE_KDF};
 use crate::config::Config;
 use crate::deliver::{self, DeliverArgs, Env, Secret, Ui};
 use crate::device::Tools;
@@ -28,6 +28,8 @@ pub struct DelOpts {
     pub test_device: bool,
     pub yes: bool,
     pub confirm_stale: bool,
+    /// `store migrate --test-delivery --test-store-passphrase-file FILE`
+    /// only; every other command refuses it.
     pub store_pass_file: Option<PathBuf>,
     pub key_pass_file: Option<PathBuf>,
     pub json: bool,
@@ -66,6 +68,37 @@ pub fn read_pass_file(path: &Path) -> Result<Zeroizing<String>, String> {
         return Err(format!("{shown} must hold exactly one line"));
     }
     Ok(Zeroizing::new(s.to_string()))
+}
+
+/// Reads a private file of exactly `n` lines (a regular file, not readable
+/// by group or others; a trailing newline is dropped).
+pub fn read_lines_private(path: &Path, n: usize) -> Result<Vec<Zeroizing<String>>, String> {
+    let shown = path.display();
+    let meta = std::fs::symlink_metadata(path).map_err(|e| format!("cannot read {shown}: {e}"))?;
+    if !meta.file_type().is_file() {
+        return Err(format!("{shown} is not a regular file"));
+    }
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let mode = meta.permissions().mode() & 0o777;
+        if mode & 0o077 != 0 {
+            return Err(format!(
+                "{shown} may be read by group or others (mode {mode:04o}); run chmod 600 on it"
+            ));
+        }
+    }
+    let raw = Zeroizing::new(std::fs::read(path).map_err(|e| format!("cannot read {shown}: {e}"))?);
+    let body = raw.strip_suffix(b"\n").unwrap_or(&raw);
+    let s = std::str::from_utf8(body).map_err(|_| format!("{shown} is not UTF-8"))?;
+    let lines: Vec<Zeroizing<String>> = s
+        .split('\n')
+        .map(|l| Zeroizing::new(l.to_string()))
+        .collect();
+    if lines.len() != n {
+        return Err(format!("{shown} must hold exactly {n} line(s)"));
+    }
+    Ok(lines)
 }
 
 pub(crate) struct TerminalUi;
@@ -130,21 +163,16 @@ impl Ui for TerminalUi {
 }
 
 struct TestUi {
-    store: Option<Zeroizing<String>>,
     key: Option<Zeroizing<String>>,
     yes: bool,
 }
 
 impl Ui for TestUi {
     fn secret(&mut self, what: Secret) -> Result<Zeroizing<String>, String> {
-        let v = match what {
-            Secret::StorePassphrase => &self.store,
-            Secret::SigningKeyPassphrase => &self.key,
-        };
-        v.clone().ok_or_else(|| match what {
-            Secret::StorePassphrase => "--test-store-passphrase-file is needed".to_string(),
-            Secret::SigningKeyPassphrase => "--test-key-passphrase-file is needed".to_string(),
-        })
+        let Secret::SigningKeyPassphrase = what;
+        self.key
+            .clone()
+            .ok_or_else(|| "--test-key-passphrase-file is needed".to_string())
     }
     fn confirm(&mut self, word: &str, question: &str) -> Result<bool, String> {
         if self.yes {
@@ -193,12 +221,12 @@ fn make_ui(cfg: &Config, o: &DelOpts) -> Result<Box<dyn Ui>, i32> {
 }
 
 fn make_ui_inner(cfg: &Config, o: &DelOpts) -> Result<Box<dyn Ui>, i32> {
-    let test_flags = o.yes || o.store_pass_file.is_some() || o.key_pass_file.is_some();
+    let test_flags = o.yes || o.key_pass_file.is_some();
     if !o.d.test_delivery {
         if test_flags {
             return Err(err(
                 exit::USAGE,
-                "--yes and the --test-*-passphrase-file options are only for --test-delivery",
+                "--yes and --test-key-passphrase-file are only for --test-delivery",
             ));
         }
         return Ok(Box::new(TerminalUi));
@@ -216,7 +244,6 @@ fn make_ui_inner(cfg: &Config, o: &DelOpts) -> Result<Box<dyn Ui>, i32> {
         }
     };
     Ok(Box::new(TestUi {
-        store: read(&o.store_pass_file)?,
         key: read(&o.key_pass_file)?,
         yes: o.yes,
     }))
@@ -455,45 +482,6 @@ pub fn cmd_handover(cfg: &Config, o: &DelOpts) -> i32 {
     })
 }
 
-/// `store init --test-delivery --test-store-passphrase-file FILE`: a
-/// throwaway store for test deliveries, without a terminal.
-pub fn cmd_test_store_init(cfg: &Config, o: &DelOpts) -> i32 {
-    if !cfg.allow_test_key_for_test_deliveries {
-        return err(
-            exit::STORE,
-            "a test store needs allow_test_key_for_test_deliveries = true in the config",
-        );
-    }
-    let Some(f) = &o.store_pass_file else {
-        return err(
-            exit::USAGE,
-            "store init --test-delivery needs --test-store-passphrase-file FILE",
-        );
-    };
-    let pass = match read_pass_file(f) {
-        Ok(p) => p,
-        Err(e) => return err(exit::USAGE, e),
-    };
-    let path = match deliver::store_path(cfg) {
-        Ok(p) => p,
-        Err(e) => return err(exit::STORE, e),
-    };
-    let lock = match Store::lock_for_init(&path) {
-        Ok(l) => l,
-        Err(e) => return err(exit::STORE, e),
-    };
-    match Store::init_locked(lock, &pass, STORE_KDF, &mut SystemRand::new()) {
-        Ok(_) => {
-            println!(
-                "TEST admin store created (encrypted, mode 0600): {}",
-                path.display()
-            );
-            exit::OK
-        }
-        Err(e) => err(exit::STORE, e),
-    }
-}
-
 pub fn cmd_apk_inspect(file: &str, json: bool) -> i32 {
     match apk::inspect(Path::new(file)) {
         Ok(i) => {
@@ -561,16 +549,13 @@ mod tests {
             return;
         }
         let t0 = std::time::Instant::now();
-        let e = TerminalUi.secret(Secret::StorePassphrase).unwrap_err();
-        assert!(e.contains("--test-store-passphrase-file FILE"), "{e}");
-        assert!(e.contains("store passphrase"), "{e}");
         let e = TerminalUi.secret(Secret::SigningKeyPassphrase).unwrap_err();
         assert!(e.contains("--test-key-passphrase-file FILE"), "{e}");
         let e = TerminalUi.confirm("WIPE", "Type WIPE: ").unwrap_err();
         assert!(e.contains("--test-device --yes"), "{e}");
         let e = TerminalUi.confirm("STALE", "Type STALE: ").unwrap_err();
         assert!(e.contains("--confirm-stale-revocation-list"), "{e}");
-        let e = terminal_secret("store passphrase: ", None).unwrap_err();
+        let e = terminal_secret("backup password: ", None).unwrap_err();
         assert!(e.contains("run it in a terminal"), "{e}");
         assert!(t0.elapsed() < Duration::from_secs(2));
     }

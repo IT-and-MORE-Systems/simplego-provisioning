@@ -8,6 +8,8 @@ mod activation_cmd;
 mod agent;
 mod apk;
 mod attest;
+mod backup;
+mod backup_cmd;
 mod config;
 mod config_cmd;
 mod deliver;
@@ -46,6 +48,7 @@ struct Opts {
     messenger_package: Option<String>,
     confirm_stale: bool,
     act: activation_cmd::ActOpts,
+    bk: backup_cmd::BackupOpts,
     del: deliver_cmd::DelOpts,
     os: os_cmd::OsOpts,
 }
@@ -60,33 +63,51 @@ fn usage() -> String {
   {b} trust status [--json]
   {b} trust refresh
   {b} trust import DIR   (lists placed by hand: status.json, attestation.json, attestation.json.sig)
-  {b} store init
+  {b} store init [--json]
+  {b} store migrate [--json]   (a passphrase store, once: the passphrase is asked a last time)
   {b} store list [--json] [--show-serial]
   {b} activation pubkey --key PUBFILE [--json]
   {b} activation issue --customer-ref REF --device-class phone|desktop --network-mode MODE
         --servers FILE --support FILE --key PRIVFILE [--serial SERIAL] --out FILE
+        [--features FILE] [--directory FILE (needs --serial)]
+        [--test-delivery [--test-key-passphrase-file FILE]]
+        (--test-delivery: TEST ONLY key, the fixed lab code, allow_test_key_for_test_deliveries)
   {b} activation update --customer-ref REF --device-class phone|desktop --network-mode MODE
         --servers FILE --support FILE --key PRIVFILE [--rotate-update-key | --under-key-id ID] --out FILE
+        [--features FILE]
   {b} activation inspect FILE [--trusted PUBFILE ...] [--code | --update-key-from-store REF |
-        --update-key-file FILE | --update-key-prompt] [--json]
+        --update-key-file FILE | --update-key-prompt] [--show-names] [--json]
   {b} deliver --serial SERIAL --apk FILE --customer-ref REF --network-mode MODE
-        --servers FILE --support FILE --key PRIVFILE [--orbot-apk FILE [--fdroid-apk FILE]]
+        --servers FILE --support FILE --key PRIVFILE [--features FILE] [--directory FILE]
+        [--orbot-apk FILE [--fdroid-apk FILE]]
         [--normal-tier] [--reinstall] [--accept-unverified-messenger] [--confirm-stale-revocation-list]
         [--dry-run] [--allow-outdated-os] [--offline] [--json]
-        [--test-delivery --test-store-passphrase-file FILE --test-key-passphrase-file FILE [--yes]]
+        [--test-delivery --test-key-passphrase-file FILE [--yes]]
   {b} undeliver --serial SERIAL --test-device [--discard-test-setup] [--json]
-        [--test-delivery --test-store-passphrase-file FILE]   (without a terminal)
   {b} handover --serial SERIAL [--json]
   {b} apk inspect FILE [--json]
-  {b} store init --test-delivery --test-store-passphrase-file FILE   (throwaway test store only)
+  {b} store migrate --test-delivery --test-store-passphrase-file FILE   (throwaway test store only)
   {b} os status --serial SERIAL [--channel CHANNEL] [--offline] [--json]
   {b} os fetch --device CODENAME [--channel CHANNEL | --version VERSION] [--json]
   {b} flash --serial SERIAL [--channel CHANNEL | --version VERSION] [--dry-run] [--offline] [--json]
-        [--test-device [--yes] [--test-store-passphrase-file FILE]] [--confirm-stale-revocation-list]
+        [--test-device [--yes]] [--confirm-stale-revocation-list]
   {b} flash --resume --serial SERIAL [--version VERSION] [--test-device [--yes]] [--json]
         (continues from a phone already in fastboot mode)
   {b} config show [--json]
   {b} config set KEY VALUE [--json]
+  {b} backup init [--json] [--code-fd N --confirm-fd M]
+  {b} backup now [--scheduled] [--json]   (--scheduled: only when the last good backup is older than 24 hours)
+  {b} backup list [--json]
+  {b} backup verify [--json]
+  {b} backup drill [--from FILE] [--json] [--confirm-fd M]
+  {b} backup restore --from FILE [--to DIR | --replace] [--json] [--confirm-fd M]
+  {b} backup password [--json] [--confirm-fd M]
+  {b} backup new-code [--forget-old] [--json] [--code-fd N --confirm-fd M]
+  {b} backup destination add folder NAME PATH [--json]
+  {b} backup destination add webdav NAME URL --credentials FILE [--json]   (over Tor)
+  {b} backup destination remove NAME [--json]
+  {b} backup destination list [--json]
+  {b} backup timer install|remove
   CHANNEL: stable (default), beta or alpha; VERSION: ten digits, for example 2026111801
   MODE: tor_required, tor_optional or direct
 common options: --config PATH (default: ${} or {})
@@ -113,6 +134,7 @@ fn run(args: &[String]) -> i32 {
         match a.as_str() {
             "--json" => o.json = true,
             "--show-serial" => o.show_serial = true,
+            "--show-names" => o.act.show_names = true,
             "--confirm-stale-revocation-list" => o.confirm_stale = true,
             "--config" => match it.next() {
                 Some(p) => o.config = Some(PathBuf::from(p)),
@@ -151,6 +173,32 @@ fn run(args: &[String]) -> i32 {
                 }
             }
             "--yes" => o.del.yes = true,
+            "--allow-unencrypted-disk" => o.act.allow_unencrypted_disk = true,
+            "--replace" => o.bk.replace = true,
+            "--scheduled" => o.bk.scheduled = true,
+            "--forget-old" => o.bk.forget_old = true,
+            "--from" | "--to" | "--credentials" => {
+                let Some(v) = it.next() else {
+                    return usage_err(&format!("{a} needs a value"));
+                };
+                let v = PathBuf::from(v);
+                match a.as_str() {
+                    "--from" => o.bk.from = Some(v),
+                    "--to" => o.bk.to = Some(v),
+                    _ => o.bk.credentials = Some(v),
+                }
+            }
+            "--code-fd" | "--confirm-fd" => {
+                let n = match it.next().map(|v| v.parse::<i32>()) {
+                    Some(Ok(n)) if n > 2 => n,
+                    _ => return usage_err(&format!("{a} needs a file descriptor number above 2")),
+                };
+                if a == "--code-fd" {
+                    o.bk.code_fd = Some(n);
+                } else {
+                    o.bk.confirm_fd = Some(n);
+                }
+            }
             "--apk"
             | "--orbot-apk"
             | "--fdroid-apk"
@@ -180,7 +228,9 @@ fn run(args: &[String]) -> i32 {
             | "--under-key-id"
             | "--trusted"
             | "--update-key-from-store"
-            | "--update-key-file" => {
+            | "--update-key-file"
+            | "--features"
+            | "--directory" => {
                 let Some(v) = it.next() else {
                     return usage_err(&format!("{a} needs a value"));
                 };
@@ -196,6 +246,8 @@ fn run(args: &[String]) -> i32 {
                     "--under-key-id" => o.act.under_key_id = Some(v),
                     "--trusted" => o.act.trusted.push(PathBuf::from(v)),
                     "--update-key-file" => o.act.update_key_file = Some(PathBuf::from(v)),
+                    "--features" => o.act.features = Some(PathBuf::from(v)),
+                    "--directory" => o.act.directory = Some(PathBuf::from(v)),
                     _ => o.act.update_key_from_store = Some(v),
                 }
             }
@@ -219,6 +271,11 @@ fn run(args: &[String]) -> i32 {
     o.del.d.servers = o.act.servers.clone().unwrap_or_default();
     o.del.d.support = o.act.support.clone().unwrap_or_default();
     o.del.d.key = o.act.key.clone().unwrap_or_default();
+    o.act.test_delivery = o.del.d.test_delivery;
+    o.act.test_store_pass_file = o.del.store_pass_file.clone();
+    o.act.test_key_pass_file = o.del.key_pass_file.clone();
+    o.del.d.features = o.act.features.clone();
+    o.del.d.directory = o.act.directory.clone();
     o.del.offline = o.os.offline;
     o.os.serial = o.serial.clone();
     o.os.json = o.json;
@@ -226,34 +283,77 @@ fn run(args: &[String]) -> i32 {
     o.os.yes = o.del.yes;
     o.os.dry_run = o.del.d.dry_run;
     o.os.confirm_stale = o.confirm_stale;
-    o.os.store_pass_file = o.del.store_pass_file.clone();
-    match words.as_slice() {
-        ["devices"] => cmd_devices(&o),
-        ["verify"] => cmd_verify(&o),
-        ["trust", "status"] => cmd_trust_status(&o),
-        ["trust", "refresh"] => cmd_trust_refresh(&o),
-        ["trust", "import", dir] => cmd_trust_import(&o, dir),
-        ["store", "init"] if o.del.d.test_delivery => {
-            with_config(&o, |c| deliver_cmd::cmd_test_store_init(c, &o.del))
+    if o.del.store_pass_file.is_some() && words.as_slice() != ["store", "migrate"] {
+        return usage_err(
+            "--test-store-passphrase-file is only for `store migrate --test-delivery`; stores open with their store key",
+        );
+    }
+    if o.act.allow_unencrypted_disk
+        && !matches!(
+            words.as_slice(),
+            ["store", "init" | "migrate"] | ["backup", "restore"]
+        )
+    {
+        return usage_err(
+            "--allow-unencrypted-disk is only for `store init`, `store migrate` and `backup restore`",
+        );
+    }
+    o.bk.json = o.json;
+    o.bk.allow_unencrypted_disk = o.act.allow_unencrypted_disk;
+    let backup_only = o.bk.from.is_some()
+        || o.bk.to.is_some()
+        || o.bk.replace
+        || o.bk.scheduled
+        || o.bk.forget_old
+        || o.bk.credentials.is_some()
+        || o.bk.code_fd.is_some()
+        || o.bk.confirm_fd.is_some();
+    if backup_only && words.first() != Some(&"backup") {
+        return usage_err("--from, --to, --replace, --scheduled, --forget-old, --credentials, --code-fd and --confirm-fd are for `backup` commands");
+    }
+    let code = dispatch(&o, &words);
+    // Every command but `backup ...` ends with the automatic backup (after
+    // a store or config write, or when the last good one is older than 24
+    // hours) and the warnings, on standard error.
+    let quiet = matches!(
+        words.as_slice(),
+        ["backup", ..] | ["apk", ..] | ["activation", "pubkey"] | ["config", "show"]
+    );
+    if !quiet {
+        if let Ok((c, _)) = Config::load(o.config.as_deref()) {
+            backup_cmd::after_command(&c, o.json);
         }
-        ["store", "init"] => with_config(&o, activation_cmd::cmd_store_init),
-        ["deliver"] => with_config(&o, |c| deliver_cmd::cmd_deliver(c, &o.del)),
-        ["undeliver"] => with_config(&o, |c| deliver_cmd::cmd_undeliver(c, &o.del)),
-        ["handover"] => with_config(&o, |c| deliver_cmd::cmd_handover(c, &o.del)),
+    }
+    code
+}
+
+fn dispatch(o: &Opts, words: &[&str]) -> i32 {
+    match words {
+        ["backup", rest @ ..] => with_config(o, |c| backup_cmd::cmd(c, &o.bk, rest)),
+        ["devices"] => cmd_devices(o),
+        ["verify"] => cmd_verify(o),
+        ["trust", "status"] => cmd_trust_status(o),
+        ["trust", "refresh"] => cmd_trust_refresh(o),
+        ["trust", "import", dir] => cmd_trust_import(o, dir),
+        ["store", "init"] => with_config(o, |c| activation_cmd::cmd_store_init(c, &o.act)),
+        ["store", "migrate"] => with_config(o, |c| activation_cmd::cmd_store_migrate(c, &o.act)),
+        ["deliver"] => with_config(o, |c| deliver_cmd::cmd_deliver(c, &o.del)),
+        ["undeliver"] => with_config(o, |c| deliver_cmd::cmd_undeliver(c, &o.del)),
+        ["handover"] => with_config(o, |c| deliver_cmd::cmd_handover(c, &o.del)),
         ["apk", "inspect", file] => deliver_cmd::cmd_apk_inspect(file, o.json),
         ["config", "show"] => config_cmd::cmd_show(o.config.as_deref(), o.json),
         ["config", "set", key, value] => {
             config_cmd::cmd_set(o.config.as_deref(), key, value, o.json)
         }
-        ["os", "status"] => with_config(&o, |c| os_cmd::cmd_os_status(c, &o.os)),
-        ["os", "fetch"] => with_config(&o, |c| os_cmd::cmd_os_fetch(c, &o.os)),
-        ["flash"] => with_config(&o, |c| os_cmd::cmd_flash(c, &o.os)),
-        ["store", "list"] => with_config(&o, |c| activation_cmd::cmd_store_list(c, &o.act)),
+        ["os", "status"] => with_config(o, |c| os_cmd::cmd_os_status(c, &o.os)),
+        ["os", "fetch"] => with_config(o, |c| os_cmd::cmd_os_fetch(c, &o.os)),
+        ["flash"] => with_config(o, |c| os_cmd::cmd_flash(c, &o.os)),
+        ["store", "list"] => with_config(o, |c| activation_cmd::cmd_store_list(c, &o.act)),
         ["activation", "pubkey"] => activation_cmd::cmd_pubkey(&o.act),
-        ["activation", "issue"] => with_config(&o, |c| activation_cmd::cmd_issue(c, &o.act)),
-        ["activation", "update"] => with_config(&o, |c| activation_cmd::cmd_update(c, &o.act)),
+        ["activation", "issue"] => with_config(o, |c| activation_cmd::cmd_issue(c, &o.act)),
+        ["activation", "update"] => with_config(o, |c| activation_cmd::cmd_update(c, &o.act)),
         ["activation", "inspect", file] => {
-            activation_cmd::cmd_inspect(&|| load_config(&o), &o.act, file)
+            activation_cmd::cmd_inspect(&|| load_config(o), &o.act, file)
         }
         _ => usage_err("unknown command"),
     }

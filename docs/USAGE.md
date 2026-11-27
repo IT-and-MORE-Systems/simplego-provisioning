@@ -12,7 +12,8 @@ each check proves in [SECURITY_MODEL.md](SECURITY_MODEL.md).
     sxprov trust status [--json]
     sxprov trust refresh
     sxprov trust import DIR
-    sxprov store init
+    sxprov store init [--json]
+    sxprov store migrate [--json]
     sxprov store list [--json] [--show-serial]
     sxprov activation pubkey --key PUBFILE [--json]
     sxprov activation issue --customer-ref REF --device-class phone|desktop --network-mode MODE \
@@ -25,19 +26,31 @@ each check proves in [SECURITY_MODEL.md](SECURITY_MODEL.md).
         --servers FILE --support FILE --key PRIVFILE [--orbot-apk FILE [--fdroid-apk FILE]] \
         [--normal-tier] [--reinstall] [--accept-unverified-messenger] [--confirm-stale-revocation-list] \
         [--dry-run] [--json] \
-        [--test-delivery --test-store-passphrase-file FILE --test-key-passphrase-file FILE [--yes]]
+        [--test-delivery --test-key-passphrase-file FILE [--yes]]
     sxprov undeliver --serial SERIAL --test-device [--discard-test-setup] [--json]
-        [--test-delivery --test-store-passphrase-file FILE]
     sxprov handover --serial SERIAL [--json]
     sxprov apk inspect FILE [--json]
-    sxprov store init --test-delivery --test-store-passphrase-file FILE
+    sxprov store migrate --test-delivery --test-store-passphrase-file FILE
     sxprov os status --serial SERIAL [--channel CHANNEL] [--offline] [--json]
     sxprov os fetch --device CODENAME [--channel CHANNEL | --version VERSION] [--json]
     sxprov flash --serial SERIAL [--channel CHANNEL | --version VERSION] [--dry-run] [--offline] [--json] \
-        [--test-device [--yes] [--test-store-passphrase-file FILE]] [--confirm-stale-revocation-list]
+        [--test-device [--yes]] [--confirm-stale-revocation-list]
     sxprov flash --resume --serial SERIAL [--version VERSION] [--test-device [--yes]] [--json]
     sxprov config show [--json]
     sxprov config set KEY VALUE [--json]
+    sxprov backup init [--json] [--code-fd N --confirm-fd M]
+    sxprov backup now [--scheduled] [--json]
+    sxprov backup list [--json]
+    sxprov backup verify [--json]
+    sxprov backup drill [--from FILE] [--json] [--confirm-fd M]
+    sxprov backup restore --from FILE [--to DIR | --replace] [--json] [--confirm-fd M]
+    sxprov backup password [--json] [--confirm-fd M]
+    sxprov backup new-code [--forget-old] [--json] [--code-fd N --confirm-fd M]
+    sxprov backup destination add folder NAME PATH [--json]
+    sxprov backup destination add webdav NAME URL --credentials FILE [--json]
+    sxprov backup destination remove NAME [--json]
+    sxprov backup destination list [--json]
+    sxprov backup timer install|remove
 
 `verify` and `deliver` also take `--offline` (channel files from the cache
 only); `deliver` takes `--allow-outdated-os`.
@@ -45,14 +58,15 @@ only); `deliver` takes `--allow-outdated-os`.
 No command waits for terminal input it cannot get: a passphrase or a typed
 confirmation asked with no terminal on standard input stops at once, with a
 message that names what replaces it in a test run
-(`--test-store-passphrase-file FILE`, `--test-key-passphrase-file FILE`,
-`--test-device --yes`, `--yes`, `--confirm-stale-revocation-list`).
+(`--test-key-passphrase-file FILE`, `--test-device --yes`, `--yes`,
+`--confirm-stale-revocation-list`). The admin store asks for nothing: it
+opens with its store key (see "Admin store").
 
 `-s` is short for `--serial`. Every command takes `--config PATH`. Without it,
 the tool uses `$SXPROV_CONFIG`, then `config/provisioning.toml`.
 
 The binary name is set once, in `[[bin]]` of `Cargo.toml`; the code reads it
-from there. `sxprov --version` prints "SimpleGo Provisioning 0.1.0 alpha
+from there. `sxprov --version` prints "SimpleGo Provisioning 0.2.0 alpha
 (build N)".
 
 ### The messenger package
@@ -163,6 +177,10 @@ implements it.
   has the next `sequence`, so an old update cannot be replayed. An
   activation file carries the customer's current sequence, so an
   installation activated later refuses older updates too.
+- Optional since 2026-11-27 (format section 12): the customer's feature
+  profile (`features`, in both kinds) and, in activation files only, the
+  customer directory (`directory`: the device's display name, its role and
+  the groups it joins). See "Feature profile and directory" below.
 
 Network modes: `tor_required` (every address has an onion host),
 `tor_optional` (every server address has an onion host and a clearnet
@@ -237,9 +255,21 @@ decrypted.
 
 `tests/fixtures/sxact/keys/sxact-TEST-ONLY-signing-key` is a separate test
 key pair (comment `TEST ONLY, never trusted in release builds`). It exists
-only for the test vectors. `issue` and `update` refuse it by its `key_id`,
-so a test file can never reach a customer. Apps may trust it only in debug
-and test builds; a release build must fail if it is in the trusted list.
+only for the test vectors and lab devices. `issue` and `update` refuse it by
+its `key_id`, so a test file can never reach a customer. Apps may trust it
+only in debug and test builds; a release build must fail if it is in the
+trusted list.
+
+Lab files: `activation issue --test-delivery` (with
+`allow_test_key_for_test_deliveries = true` in the config, as for `deliver
+--test-delivery`) signs only with the TEST ONLY key and refuses every other
+key. The code follows the key: a file signed with the TEST ONLY key always
+gets the fixed lab code `727272+727272`, a file signed with any other key
+never does. Because the code is the published lab code, no terminal is
+needed; the signing key passphrase may come from
+`--test-key-passphrase-file FILE` (mode 0600, only with `--test-delivery`),
+and the store opens with its store key. `activation update
+--test-delivery` is refused.
 
 ### `activation issue`
 
@@ -256,9 +286,18 @@ and test builds; a release build must fail if it is in the trusted list.
   below).
 - `--customer-ref`: an opaque reference (`A-Z a-z 0-9 -`, at most 32), never
   a name or other personal data.
+- `--features FILE` (optional): the customer's feature profile for this
+  device class; it replaces the stored one. Without it, the stored profile
+  of the customer and device class is written, if there is one.
+- `--directory FILE` (optional, needs `--serial`): this device's directory
+  entry. See "Feature profile and directory".
 
-It checks the input and the network mode rule first, then asks for the store
-passphrase and the key passphrase. It creates the customer's update key on
+It checks the input, the feature profile and directory and the network
+mode rule first, then opens the store (with its store key), prints the feature
+profile the file will carry (`features_profile` and `features_fixed`, and
+how `--features` changes the stored profile, naming every switch that is
+no longer fixed off) and the directory role, then asks for the key
+passphrase. It creates the customer's update key on
 first use, generates the code with the system random generator, builds and
 signs the file, checks it once more with the same reader the apps use,
 records the issue in the store and writes the file with mode 0600 (an
@@ -281,6 +320,72 @@ update key with the next sequence and records it.
 
 One update file serves every installation of the customer with that device
 class; phones and desktops get one file each.
+
+- `--features FILE`: replaces the stored profile for this device class; the
+  update carries it. Without it, every update carries the stored profile
+  again (if there is one), so an installation that missed an update gets
+  the whole profile from the next one. An update file without `features`
+  leaves an installation's profile unchanged; one with `features` replaces
+  it (format section 12.4).
+- `--directory` is refused (exit 2): an update never carries a directory.
+
+### Feature profile and directory
+
+Format document section 12 with the amendments of 12.4 (2026-11-27). Both
+objects are optional and fail closed inside: an app refuses a file with a
+name or value it does not know there.
+
+`--features FILE` holds exactly the `features` object:
+
+    {"profile_version": 1, "groups": "off", "channels": "off", "preset_servers": "off",
+     "calls": "on", "files": "on", "voice_messages": "on", "calculator_disguise": "on"}
+
+- `profile_version` is the integer `1`. Switches: `groups`, `channels`,
+  `preset_servers`, `calls`, `files`, `voice_messages`,
+  `calculator_disguise`, and for the desktop only `laptop_link`,
+  `developer_tools`, `vault`. Values `on` (on at installation, the user may
+  switch it off), `off` (fixed off, refused in the backend), `ask` (not
+  fixed); a missing switch is not fixed either.
+- Refused: an unknown name or value, `null`, a duplicate key, a missing
+  `profile_version`, an array instead of the object, and a desktop-only
+  switch `on` with `--device-class phone`.
+- Stored in the admin store per customer and device class.
+- `features_profile` is the first 16 hex characters of SHA-256 over the
+  canonical JSON of the object (keys sorted, no spaces, nothing
+  normalized); `features_fixed` lists the `on` and `off` switches as
+  `name:value,...`. The app reports both in its `status`, and `deliver`
+  compares them with what it issued.
+
+`--directory FILE` holds this device's part of the `directory` object;
+`sxprov` adds `directory_version` and the customer's `set_id` (a file that
+carries either is refused):
+
+    {"display_name": "Anna Müller", "role": "owner",
+     "groups": [{"name": "Kanzlei", "link": "https://<host>/g#<key>?c=<key hash>", "direct_contacts": true}]}
+
+- `display_name` and every group `name`: 1 to 50 characters, Latin letters
+  (also accented letters and umlauts such as `ä ö ü ß é è ç ñ ł`, each as
+  one character), digits, spaces and hyphens, and a valid SimpleX name: it
+  starts with a letter or digit, does not end with a space, and has no two
+  spaces or two hyphens in a row. Anything else is refused, naming the
+  character (`Dr Weber`, not `Dr. Weber`: the SimpleX core refuses the dot
+  and the set-up on the device would fail). Messages never repeat a name.
+- `role`: `owner` (exactly one device per customer set) or `member`.
+- `groups`: 1 to 20. `link` is a SimpleX group link in the short form only,
+  `https://<host>/g#<key>[?h=...&p=...]&c=<key hash>` with the grammar of
+  the support short link (`c` required); refused: the long form, the
+  `simplex:/g#` form, upper case `/G#`, `/g/#`, and the link types `a`,
+  `i`, `c` (channels) and `r`. Its server (hosts in order, port and key
+  hash) must be one of the `--servers` SMP addresses, and its hosts follow
+  the network mode rule of the servers.
+- The admin store keeps no display name and no link. Per customer it keeps
+  the random `set_id`, a SHA-256 of the group list and the number of
+  groups, and per device the serial, device class, role, `file_id` and
+  time. From that: every device of the set must get the same groups in the
+  same order, and a second `owner` on another serial is refused
+  (re-issuing to the owner's serial is allowed).
+- A group link works only while the organizer that created the group is
+  online, so a directory is for the initial delivery (format section 12.2).
 
 ### Long support addresses
 
@@ -366,12 +471,55 @@ with every host masked (`abcd...wxyz.onion`), every password and the update
 key hidden, and whether the payload passes every rule. Exit code 0 only if
 the file passes. Without any of the four, only the signature is checked.
 
+With a `features` object it also prints the lines the app reports,
+`features_profile=<16 hex>` and `features_fixed=<name>:<value>,...`. A
+`directory` is shown with its version, `set_id`, role, groups (name,
+`direct_contacts`, the link masked like the support address) and the
+display name hidden (`<hidden, N characters>`); `--show-names` shows the
+display name. The desktop-only switch rule is checked against the file's
+own device class.
+
 ### Admin store
 
-`sxprov store init` creates the encrypted admin store; every other store
-command asks for its passphrase. Default path
+`sxprov store init` creates the encrypted admin store and its random
+256-bit store key. Nobody types the key; every command that uses the store
+opens it with the key next to it. Default path
 `~/.local/share/sxprov/admin-store.sxdb`, settable as `admin_store_path` in
 the config. A path inside a git repository is refused.
+
+Where the key lives is detected at run time and named by `store init`,
+`store migrate` and `store list`:
+
+- **TPM 2.0**: where `/dev/tpmrm0` exists and `systemd-creds has-tpm2`
+  reports full support, the key is sealed with `systemd-creds --user
+  encrypt --with-key=tpm2 --tpm2-pcrs=` (user scope, no PCR binding, so a
+  firmware, kernel or Secure Boot update never locks the operator out) into
+  `admin-store.sxdb.key.cred`. A copy of that file is useless on another
+  machine. systemd 256 or later (Debian 13 has 257).
+- **Key file**: otherwise `admin-store.sxdb.key`, mode 0600, one line
+  `sxprov-store-key-v1 ` and 64 lowercase hex characters. On Linux outside
+  WSL a new key file is written only onto an encrypted disk (dm-crypt,
+  directly or below LVM); `--allow-unencrypted-disk` overrides that only in
+  a throwaway test config (`allow_test_key_for_test_deliveries = true`).
+- **WSL** (a development machine): a key file; the disk encryption is not checked.
+
+Exactly one key must be next to the store: none, or both, is refused. A key
+that is not this store's key is refused as such ("does not belong to this
+store"), never as damage. Every backup carries the key (`admin/store-key`),
+so a restore on a new laptop works without the old laptop's TPM.
+
+`sxprov store migrate` moves a store made before 0.2.0-alpha (container
+version 1, Argon2id from a passphrase) to a store key, once: it asks the
+passphrase one last time, writes the new key, writes the store as version 2,
+opens that file again with the key read back and compares it with the
+passphrase store. Only then the passphrase file is kept as
+`admin-store.sxdb.v1-before-store-key` and `.bak` is replaced by a copy of
+the new file. Any failure leaves the passphrase store untouched and removes
+the new key. The `v1-before-store-key` copy is deleted by the first
+successful `backup drill`. Every other command refuses a version 1 store and
+names `store migrate`. A throwaway test store may give the old passphrase
+with `--test-delivery --test-store-passphrase-file FILE` (test config only);
+no other command takes that option.
 
 - It holds per customer (`customer_ref`): the update key, the earlier update
   keys after a rotation, the last sequence and when the customer was
@@ -392,32 +540,44 @@ the config. A path inside a git repository is refused.
   disabled calculator package, `customer_ref`, start and end time, the
   result (`delivered`, `failed at step N`, `undone`) with the reason of a
   failure, and the undo and handover times.
+- Since content version 4: per customer the feature profile for each
+  device class and the directory set (random `set_id`, SHA-256 and number
+  of the groups, per device the serial, device class, role, `file_id` and
+  time); in the fleet log and the delivery records the issued
+  `features_profile`, `features_fixed` and directory role.
 - It never holds a copy of an issued file, a full activation code, a name
-  or a server password. A lost file is replaced by a new file with a new
-  code.
-- Content version 2 adds the delivery records. A version 1
-  store is migrated when it is opened (no deliveries yet) and written as
-  version 2 on the next save. An older `sxprov` refuses a version 2 store
-  instead of dropping records; a newer version is refused, never rewritten.
-- Encrypted at rest: Argon2id (64 MiB, 3 passes, 1 lane, random salt) from
-  the store passphrase (at least 12 characters), AES-256-GCM, own header
-  `SXDB` version 1.
+  (also no directory display name), a group link or a server password. A
+  lost file is replaced by a new file with a new code.
+- Content versions: 2 adds the delivery records, 3 the flash records, 4
+  the feature profiles and directory sets. An older store is migrated when
+  it is opened and written as version 4 on the next save. An older
+  `sxprov` refuses a newer store instead of dropping records, so once a
+  store is saved as version 4 it can no longer be opened with an older
+  `sxprov` (the `.bak` file holds only the version before the last save);
+  a newer version is refused, never rewritten.
+- Encrypted at rest: AES-256-GCM under the store key, own header `SXDB`
+  version 2 (magic, version, key id, nonce, length; the header is the
+  associated data). The key id is the first 16 bytes of SHA-256 over
+  `sxprov store key id v1` and the key.
 - Written atomically (temporary file, fsync, rename); the previous version
-  is kept as `admin-store.sxdb.bak`; mode 0600. A wrong passphrase gives a
-  clear error and changes nothing.
+  is kept as `admin-store.sxdb.bak`; mode 0600. A wrong key gives a clear
+  error and changes nothing.
 
-The update keys are secrets like the server passwords: include the store in
-the encrypted backup of the admin data, never copy it into a repository or a
-document.
+The update keys are secrets like the server passwords: the backups (see
+"Backups") are the only copies that leave the store's folder, encrypted;
+never copy the store into a repository or a document.
 
 `sxprov store list` shows the customers (reference, number of issues, last
-sequence) and the issues. Serials are masked unless `--show-serial`.
+sequence, the `features_profile` stored per device class, the number of
+devices in the directory set) and the issues. Serials are masked unless
+`--show-serial`.
 
-Lock: every command that uses the store (`store init`, `store list`,
-`activation issue`, `activation update`, `activation inspect
---update-key-from-store`, `deliver`, `undeliver`, `handover`) takes an
-exclusive advisory lock (`flock`) on `admin-store.sxdb.lock` next to the
-store, mode 0600, before it asks for a passphrase, and holds it until the
+Lock: every command that uses the store (`store init`, `store migrate`,
+`store list`, `activation issue`, `activation update`, `activation inspect
+--update-key-from-store`, `deliver`, `undeliver`, `handover`, `flash`, the
+`backup` commands) takes an exclusive advisory lock (`flock`) on
+`admin-store.sxdb.lock` next to the store, mode 0600, before it reads
+anything, and holds it until the
 command ends, after its last write. A
 second `sxprov` process gets "the admin store is in use by another sxprov
 process" with exit code 12 at once; it never waits and never writes. The
@@ -425,6 +585,176 @@ lock file holds no data. A lock file left behind after a crash is harmless,
 because the kernel drops the lock when its process ends. Never delete the
 lock file while a command runs: a second process would then lock a new file
 and both could write.
+
+## Backups
+
+Losing the admin store means no further update file for any customer: the
+update keys are in it. So it is backed up automatically, encrypted, to the
+laptop's own disk and to destinations off the laptop, in the SimpleGo backup
+format v1 that every SimpleGo product uses (age-encryption.org/v1, X25519
+recipient, scrypt passphrase; no SimpleGo-specific cryptography).
+
+### Keys
+
+- `backup init` makes an 18-byte random seed and shows it once as the
+  **recovery code**: 32 characters, 8 groups of 4 (Crockford base32 with a
+  checksum; any case, spaces and hyphens, `O` for `0` and `I`/`L` for `1`
+  are accepted when it is typed; a typo is refused with "This code has a
+  typo"). The operator writes it on paper and confirms by typing one group
+  of 4 that sxprov asks for. It is never stored, logged or sent anywhere.
+- The backup key pair is derived from the seed (HKDF-SHA256, salt
+  `SimpleGo backup v1`, info `age x25519 identity`). Only the public
+  recipient (`age1...`) stays on the laptop, so automatic backups need no
+  secret.
+- The **backup password** (at least 12 characters, a strength hint, no
+  character class rules) wraps the seed with age's scrypt recipient, work
+  factor 20 (about 1 GiB and a few seconds, only at restore, drill and
+  password change); readers accept 18 to 22. The wrapped seed is in the
+  header of every backup, so the password or the recovery code restores any
+  of them.
+- `backup password` needs the current password or the recovery code;
+  older backups keep the old password, the recovery code opens all of them.
+  `backup new-code` makes a new seed and key pair (it needs the current
+  password or code, or `--forget-old` with `FORGET OLD BACKUPS` typed); older
+  backups then still need the old code or password.
+
+### What a backup holds
+
+`bk-<yyyymmdd>T<hhmmss>Z.bin`: the magic line `SIMPLEGO-BACKUP/1`, the header
+line `{"format":1,"wrapped_seed":"..."}`, then the age file to the recipient.
+Inside, a ustar archive: `manifest.json` (format, product `admin-store`, the
+sxprov version, the time, the SHA-256 of every member), `admin/store.sxdb`
+(the store as it is on disk), `admin/store-key` (its key) and
+`admin/config.toml` (the config without the paths of this machine:
+`admin_store_path`, `adb_path`, `fastboot_path`, `agent_apk`,
+`trust_cache_dir`, `grapheneos_cache_dir`, `flash_log_dir`). Not in a backup:
+the activation signing key, trust lists, APKs, factory images, the WebDAV
+credentials. `admin/organizer/<set_id>/` is reserved (the organizer databases of a later version) and
+refused by this sxprov until it is built.
+
+The Rust `age` crate adds one random `*-grease` stanza beside the X25519
+recipient to every file (to keep readers honest about unknown stanzas); it
+is not a recipient, and every age reader ignores it. Our reader accepts
+exactly one X25519 stanza and at most one grease stanza, nothing else.
+
+### When backups run
+
+- At the end of every command that wrote the store or the config (`store
+  init` and `migrate` once backups are set up, `activation issue` and
+  `update`, `deliver`, `undeliver`, `handover`, `flash`, `config set`), after
+  its last write.
+- At the end of any other command when the last good backup is older than
+  24 hours.
+- Hourly from the systemd user timer that `backup timer install` writes
+  (`~/.config/systemd/user/sxprov-backup.{service,timer}`, `OnCalendar=hourly`,
+  `Persistent=true`): `backup now --scheduled` writes only when the last good
+  backup is older than 24 hours, so a night offline or Tor not yet running is
+  caught up within the hour. A user timer runs while the operator is logged
+  in (`loginctl enable-linger` by an administrator for runs without a
+  login). A run that finds the store in use skips; the next hour tries again.
+
+The automatic run at the end of a command reports on standard error (with
+`--json` as JSON lines there), so the command's own output stays as it was. A
+failed backup never changes the command's exit code; it is named in the
+output and in the warnings.
+
+### Destinations
+
+- `local`: `backups/` next to the store, always on, on the laptop's own disk.
+  It protects against a damaged store or a mistake, not against a lost
+  laptop.
+- `backup destination add folder NAME PATH`: a USB stick or a PC share
+  mounted on the laptop. The folder must exist and must not be inside a git
+  repository; it gets a marker `.simplego-backup-destination` with the
+  destination's random id. Without the marker (an unplugged stick, an empty
+  mount point) the destination is "not connected" and nothing is written
+  there; a marker with another id is a failure.
+- `backup destination add webdav NAME URL --credentials FILE`: WebDAV or
+  Nextcloud (`https://HOST/remote.php/dav/files/USER/FOLDER/`), always over
+  `tor_socks_proxy` (`socks5h`, a new circuit per request); `https://` only,
+  `http://` only for a `.onion` host. The credentials file holds two lines,
+  the user and an app password, mode 0600, outside any git repository; it is
+  never copied into the config, the state or a backup. Only PUT, GET and
+  DELETE are used; the folder must exist.
+- `add` writes, reads back and deletes a probe file before the destination
+  is saved, then runs a backup. `remove` leaves the destination's files where
+  they are (they are no longer rotated). The SimpleGo server is not a
+  destination until its transport is decided.
+
+### Checks and rotation
+
+After every write the file is read back from the destination and checked
+without any secret: the bytes are the ones written, the magic line and the
+header, one X25519 stanza, and then the full content through the file key
+that age handed to our recipient while encrypting (kept in memory only,
+wiped afterwards): the age header MAC, every payload chunk, the tar rules,
+every manifest SHA-256, the store opening with the key it carries and equal
+to the live store. Only then the file counts as checked. What this does not
+check is that the X25519 stanza opens with the seed's identity; the monthly
+drill does.
+
+Rotation, per destination, only after that check: the newest 30 files and
+the newest file of each of the last 30 days are kept; older files are
+deleted, but only files of our own list (name, size and SHA-256 in
+`admin-store.sxdb.backup.json`). A file sxprov did not write is never
+deleted, and a failed check deletes nothing.
+
+`backup verify` reads every listed file back at every connected destination
+and checks size, SHA-256, magic line, header and stanzas.
+
+### Drill and restore
+
+- `backup drill`: the backup password (or the recovery code) is typed once;
+  the newest checked backup of each connected destination (or `--from FILE`)
+  is opened, every manifest hash checked, the members written to a private
+  temporary folder (mode 0700), the store there opened with the restored key,
+  compared with what our list recorded for that backup and the key with the
+  live key, and everything temporary deleted. `backup init` and `new-code`
+  run the first drill themselves while the seed is still in memory.
+- `backup restore --from FILE` opens the file with the password or the
+  recovery code and checks everything before a single file is written. It
+  never writes over the live store: with a live store at the configured path
+  it restores into `restored-<time>/` next to it (or `--to DIR`); on a new
+  laptop without a store it restores to the configured path and sets the
+  backups up again from the backup's key and password (destination `local`;
+  add the others again). `--replace` puts the backup in place of the live
+  store after `REPLACE` is typed; the live store and its key move aside to
+  `admin-store.sxdb.before-restore-<time>`. The restored key is stored the
+  way this laptop stores keys (TPM or key file). The backup's config is
+  written as `provisioning.restored-<time>.toml` next to the restored store;
+  the live config is never touched.
+
+### Warnings
+
+Every command (on standard error, `backup_warning` events with `--json`)
+warns while backups are not set up, when the last good backup is older than
+48 hours, when the last drill is older than 35 days or there was none, and
+while no destination off the laptop is set.
+
+### The recovery code on the screen, and the assistant
+
+On a terminal the code is written to `/dev/tty` only, never to standard
+output or error, inside the alternate screen (`ESC[?1049h`), which xterm,
+VTE (GNOME Terminal), Konsole, tmux and Windows Terminal keep out of the
+scrollback; after Enter the screen and the scrollback are cleared and the
+alternate screen is left. The group of 4 and every password are read without
+echo. A terminal that records the session on purpose (`script`, asciinema,
+tmux `pipe-pane`) cannot be prevented.
+
+The assistant of the operator console gives `--code-fd N --confirm-fd M` (file
+descriptors above 2): the code is written to N once, as one line of 8
+groups, and N is closed; every answer (the group, the passwords, typed
+words) is read as one line from M. Standard output carries `--json` events
+only, and none of them holds the code or a password: `recovery_code_shown`,
+`ask` (`what`: `recovery_code_group` with `group`, `new_backup_password`,
+`new_backup_password_again`, `backup_password_or_recovery_code`,
+`confirm_replace`), `recovery_code_confirmed`,
+`recovery_code_confirm_failed`, `secret_accepted`, `backup_started`,
+`backup_written`, `backup_skipped`, `backup_failed`, `backup_rotated`,
+`backup_done`, `verify_ok`, `verify_failed`, `verify_done`, `drill_ok`,
+`drill_failed`, `drill_done`, `restore_opened`, `restored`,
+`destination_added`, `destination_removed`, `timer_installed`,
+`timer_removed`, `backup_warning`, `error`.
 
 ## Delivery
 
@@ -515,8 +845,8 @@ and checked against the config (see "The messenger package"):
     `--fdroid-apk`), the lock proven again; see below.
 11. **F-Droid client** (with `--fdroid-apk`): see below.
 12. **Activation.** The activation file and code are issued with the `issue`
-   logic (store and signing key passphrases are asked before step 1, so a
-   wrong passphrase stops before anything is written; network mode rules and
+   logic (the store is opened and the signing key passphrase is asked
+   before step 1, so a wrong passphrase stops before anything is written; network mode rules and
    the self-check apply). The provider's `status` decides the transfer:
    - with file import (capability `file_import=yes` in `status`, a
      proposed name not yet confirmed by the messenger): the file over
@@ -527,6 +857,21 @@ and checked against the config (see "The messenger package"):
      record says `file_transferred=false`, and the output says that the
      phone uses its built-in servers and that its configuration must reach
      it later (an open point).
+   - **Refused without file import** (format section 12.4): when the file
+     would carry a feature profile that fixes any switch (`on` or `off`,
+     from `--features` or the customer's stored profile for phones) or a
+     directory entry (`--directory`), and the messenger does not report
+     `file_import=yes`. A code-only activation would leave those switches
+     unfixed and the groups unjoined. This is checked right after step 8
+     (the installed messenger answers `status`) and again here before
+     anything is issued: exit 17, record `failed at step 8` (or 12), no
+     file, no code, no fleet log entry. The message says that the phone is
+     left with the network lock and the apps installed so far: undo it with
+     `sxprov undeliver --serial SERIAL --test-device` on a test phone, or
+     remove the messenger before delivering again. A profile that fixes
+     nothing (only `ask` or missing switches) needs no file import.
+   - With `features` the record keeps the issued `features_profile`,
+     `features_fixed` and the directory role.
    The code goes to the phone only as the `--arg` of that one `content call`.
    It is shown once on the terminal for the activation card, never written
    to disk, never logged, and stored only masked. Every other output line
@@ -537,7 +882,10 @@ and checked against the config (see "The messenger package"):
    `com.android.calculator2`): `pm disable-user --user 0`, checked with
    `pm list packages -d`. A missing package stops the hardened tier and is
    a warning in the normal tier.
-14. **Final check.** `status` gives `activation=yes` and `setup=open`; the
+14. **Final check.** `status` gives `activation=yes` and `setup=open`;
+   after a file transfer with a feature profile it reports the issued
+   `features_profile` and `features_fixed` (a difference or a missing value
+   fails, exit 18); the
    battery exception is listed; the calculator is disabled; in the hardened
    tier the agent runs once more and the attestation must give OS PASS
    again. The installed messenger's `base.apk` is pulled into a private
@@ -557,7 +905,16 @@ signer, 4 when the messenger is `UNVERIFIED` (as `verify`).
 `--fdroid-apk` SimpleX's index is checked, the APK is not downloaded, so its
 app link hosts are read in a real delivery only), then prints every command
 of steps 5 to 14 it would send. It writes nothing to
-the phone and nothing to the store, and asks for no passphrase.
+the phone and nothing to the store, and asks for no passphrase. Its last
+line says whether the delivery needs the file import (a `--features` file
+that fixes a switch, or `--directory`): whether the messenger has it is
+unknown until it is installed, so the dry run names the stop after step 8.
+It reads no store, so a stored profile is checked only in the delivery.
+
+`deliver` takes `--features FILE` and `--directory FILE` as `activation
+issue` does (see "Feature profile and directory"); a `--features` file
+replaces the customer's stored phone profile when the activation is
+issued, and the change is printed once the store is open.
 
 `--json` prints one JSON object per line: `step` (with `console_step`
 "Orbot" for steps 6 and 7, the first in the operator console's deliver
@@ -751,22 +1108,22 @@ browser or a chooser instead of the app itself.
 `--test-delivery` is for the operator's own test phones only. It needs
 `allow_test_key_for_test_deliveries = true` in a throwaway test config and
 the TEST ONLY key; every other key is refused, and a real delivery refuses the
-TEST ONLY key. Only then the passphrases come from
-`--test-store-passphrase-file` and `--test-key-passphrase-file` (one line,
-mode 0600), `--yes` replaces the typed confirmations (never the `STALE`
-confirmation of the revocation list), and the code is printed to standard
-output. The record is marked `test`. A throwaway test store is created with
-`sxprov store init --test-delivery --test-store-passphrase-file FILE`.
+TEST ONLY key. The activation code of a test delivery is always the fixed lab
+code `727272+727272` (published, TEST ONLY), never a
+random one; customer phones (real deliveries, `activation issue`) always get a
+random code. Only then the signing key passphrase comes from
+`--test-key-passphrase-file` (one line, mode 0600), `--yes` replaces the
+typed confirmations (never the `STALE` confirmation of the revocation list),
+and the code is printed to standard output. The record is marked `test`. The
+store opens with its store key, so a test delivery types nothing. A
+throwaway test store is created with `sxprov store init` and a test config.
 
 ### `undeliver` (test phones only)
 
-    sxprov undeliver --serial SERIAL --test-device [--discard-test-setup] [--json] \
-        [--test-delivery --test-store-passphrase-file FILE]
+    sxprov undeliver --serial SERIAL --test-device [--discard-test-setup] [--json]
 
-`undeliver` refuses without `--test-device`. It reads the store, so without
-a terminal (a test run, the operator console) it needs the test flags of a
-test delivery: `--test-delivery` with `--test-store-passphrase-file FILE`
-(the throwaway test store of the test delivery). It works only while the
+`undeliver` refuses without `--test-device`. It opens the store with its
+store key, so it needs no terminal for that. It works only while the
 messenger reports `setup=open`; that is read before anything is changed. In
 this order:
 
@@ -1125,13 +1482,13 @@ There is never a PASS without a revocation check. `trust status` and every
 | 9 | stale revocation list not confirmed |
 | 10 | `trust refresh` or `trust import` failed |
 | 11 | `activation inspect`: the file is refused (structure, untrusted key, signature, code, payload) |
-| 12 | admin store missing, wrong passphrase, damaged, path inside a git repository, in use by another sxprov process, or a write failed |
+| 12 | admin store missing, its store key missing, unreadable or not this store's, damaged, a passphrase store not migrated yet (`store migrate`), wrong passphrase in `store migrate`, path inside a git repository, in use by another sxprov process, a key file not on an encrypted disk, or a write failed |
 | 13 | signing key unreadable, not Ed25519, not passphrase protected, wrong passphrase, or the TEST ONLY key |
-| 14 | `activation issue` or `update`: invalid servers or support file, network mode rule broken, unknown customer, output file exists, or no terminal for the code; `activation inspect`: unreadable file, or an update key file that is readable by others or not 64 lowercase hex characters |
+| 14 | `activation issue` or `update`: invalid servers, support, features or directory file, network mode rule broken, unknown customer, a directory whose groups differ from the customer's set or a second owner, output file exists, or no terminal for the code; `activation inspect`: unreadable file, or an update key file that is readable by others or not 64 lowercase hex characters |
 | 15 | `deliver`: refused before anything was written to the phone: device not found, listed twice or not in state `device`; attestation without OS PASS; messenger set up by a customer (`setup=done`), another messenger installed, or this delivery's messenger installed without `--reinstall`, or a state unreadable; normal tier not confirmed or no terminal for the confirmation; no terminal for the code (real delivery) |
 | 16 | `deliver`: an APK file is refused (unreadable, a messenger package the config does not allow, signature block invalid, wrong package, signer not the configured one, messenger signer not pinned without `--accept-unverified-messenger`, `orbot_signing_cert_sha256` empty; with `--fdroid-apk`: the F-Droid client or SimpleX APK, SimpleX's index (fingerprint, signature, rollback, size and digest), or Tor missing); `apk inspect`: the file is refused |
-| 17 | `deliver`: a write step on the phone failed (the app link verifier not disabled, install, battery exception, Orbot, the network lock not proven, the F-Droid client or SimpleX app, Orbot's VPN and its app list, the VPN consent, port 9050, the lockdown, the F-Droid client's set-up, activation, system calculator) |
-| 18 | `deliver`: every write step ran, but the final check failed (status, battery exception, calculator, installed signer through the package manager or `base.apk` differs from the file, attestation after the install, the network lock, an app link host verified or approved, the verifier enabled again or with a socket outside loopback) |
+| 17 | `deliver`: a write step on the phone failed (the app link verifier not disabled, install, battery exception, Orbot, the network lock not proven, the F-Droid client or SimpleX app, Orbot's VPN and its app list, the VPN consent, port 9050, the lockdown, the F-Droid client's set-up, activation, system calculator), or a fixed feature profile or a directory entry while the messenger has no file import (after step 8 or in step 12, nothing issued) |
+| 18 | `deliver`: every write step ran, but the final check failed (status, the reported `features_profile` or `features_fixed`, battery exception, calculator, installed signer through the package manager or `base.apk` differs from the file, attestation after the install, the network lock, an app link host verified or approved, the verifier enabled again or with a socket outside loopback) |
 | 19 | `undeliver`: refused (no `--test-device`, no record, `setup=done` without `--discard-test-setup`, a refused `--discard-test-setup`, state unreadable) or a step failed |
 | 20 | `handover`: refused (no delivered record, not confirmed, no terminal, status not `activation=yes setup=open`) or the device still answers over adb |
 | 21 | `flash`: refused before anything changed on the phone (device not found or not in state `device`, codename without a pinned GrapheneOS key, a delivery record without `--test-device`, a messenger with `setup=done`, `WIPE` not typed) |
@@ -1142,6 +1499,8 @@ There is never a PASS without a revocation check. `trust status` and every
 | 26 | `flash`: the attestation after the flash failed (no OS PASS, another verified boot key, another version, not locked) |
 | 27 | `os status`: an update is available |
 | 28 | `os status`: unknown (offline, nothing cached) or not GrapheneOS |
+| 29 | `backup`: a destination failed (write, read back, check, rotation), nothing written anywhere, backups not set up, a drill or restore failed, a timer step failed |
+| 30 | `backup`: wrong backup password or recovery code, the recovery code not confirmed, a typed confirmation (`REPLACE`, `FORGET OLD BACKUPS`) not given |
 
 The source of truth is `src/exit.rs`.
 

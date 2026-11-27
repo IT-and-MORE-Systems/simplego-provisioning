@@ -107,7 +107,7 @@ pub fn undeliver(env: &mut Env, out: &mut dyn Write, serial: &str, opts: UndoOpt
             "undeliver: refused without --test-device (it is for the operator's own test phones only)",
         );
     }
-    let mut st = match open_store(env.cfg, env.ui) {
+    let mut st = match open_store(env.cfg) {
         Ok(s) => s,
         Err((c, e)) => return err(&mut o, c, format!("undeliver: {e}")),
     };
@@ -411,7 +411,7 @@ pub fn undeliver(env: &mut Env, out: &mut dyn Write, serial: &str, opts: UndoOpt
 pub fn handover(env: &mut Env, out: &mut dyn Write, serial: &str, json: bool) -> i32 {
     let mut o = Out::new(out, serial);
     o.json = json;
-    let mut st = match open_store(env.cfg, env.ui) {
+    let mut st = match open_store(env.cfg) {
         Ok(s) => s,
         Err((c, e)) => return err(&mut o, c, format!("handover: {e}")),
     };

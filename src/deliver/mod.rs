@@ -49,6 +49,8 @@ pub mod undo;
 mod tests;
 
 use crate::activation::code::Code;
+use crate::activation::directory::parse_directory_file;
+use crate::activation::features::parse_features_file;
 use crate::activation::issue::{self, parse_servers_file, parse_support_file, Request};
 use crate::activation::keys::{is_test_key, KeyFile, Signer};
 use crate::activation::payload::{is_valid_customer_ref, DeviceClass, NetworkMode};
@@ -71,24 +73,22 @@ use std::time::Duration;
 use zeroize::Zeroizing;
 
 /// What the operator is asked. The terminal implementation reads without
-/// echo; a test delivery reads the passphrases from files.
+/// echo; a test delivery reads the passphrase from a file. The admin store
+/// asks for nothing: it opens with its store key.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Secret {
-    StorePassphrase,
     SigningKeyPassphrase,
 }
 
 impl Secret {
     pub fn prompt(self) -> &'static str {
         match self {
-            Secret::StorePassphrase => "store passphrase: ",
             Secret::SigningKeyPassphrase => "passphrase of the activation signing key: ",
         }
     }
     /// The option that gives it from a file in a test run.
     pub fn test_flag(self) -> &'static str {
         match self {
-            Secret::StorePassphrase => "--test-store-passphrase-file FILE",
             Secret::SigningKeyPassphrase => "--test-key-passphrase-file FILE",
         }
     }
@@ -147,6 +147,18 @@ pub struct DeliverArgs {
     pub fdroid_apk: Option<PathBuf>,
     /// One JSON object per line instead of text.
     pub json: bool,
+    /// `--features FILE` (format document section 12.1).
+    pub features: Option<PathBuf>,
+    /// `--directory FILE` (section 12.2).
+    pub directory: Option<PathBuf>,
+}
+
+/// The refusal of section 12.4: nothing issued, the phone left as it is.
+fn file_import_refusal(why: &str) -> String {
+    format!(
+        "{why}, but this messenger build cannot import the activation file (its status does not report {}=yes), and a code-only activation would not apply it. Nothing was issued: no file, no code, no fleet log entry. The phone is left with the network lock and the apps installed so far; undo it with `sxprov undeliver` (test phones) or as described in docs/USAGE.md before delivering again",
+        phone::FILE_IMPORT_CAPABILITY
+    )
 }
 
 #[derive(Debug)]
@@ -253,13 +265,14 @@ pub fn store_path(cfg: &Config) -> Result<PathBuf, String> {
     }
 }
 
-pub fn open_store(cfg: &Config, ui: &mut dyn Ui) -> Result<Store, (i32, String)> {
+/// Takes the store lock, then opens the store with the store key next to
+/// it; nothing is asked.
+pub fn open_store(cfg: &Config) -> Result<Store, (i32, String)> {
     let path = store_path(cfg).map_err(|e| (exit::STORE, e))?;
     let lock = Store::lock_for_open(&path).map_err(|e| (exit::STORE, e.to_string()))?;
-    let pass = ui
-        .secret(Secret::StorePassphrase)
-        .map_err(|e| (exit::STORE, e))?;
-    Store::open_locked(lock, &pass).map_err(|e| (exit::STORE, e.to_string()))
+    Store::open_locked(lock, &crate::activation::storekey::Creds::system())
+        .map(|(s, _)| s)
+        .map_err(|e| (exit::STORE, e.to_string()))
 }
 
 /// The signing key rules of a delivery: a real delivery refuses the TEST
@@ -352,6 +365,18 @@ fn read_inputs(a: &DeliverArgs) -> Result<Inputs, (i32, String)> {
         xftp,
         support_address,
         serial: Some(a.serial.clone()),
+        features: match &a.features {
+            Some(p) => {
+                Some(parse_features_file(&read(p)?).map_err(|e| (exit::ACTIVATION_INPUT, e))?)
+            }
+            None => None,
+        },
+        directory: match &a.directory {
+            Some(p) => {
+                Some(parse_directory_file(&read(p)?).map_err(|e| (exit::ACTIVATION_INPUT, e))?)
+            }
+            None => None,
+        },
     };
     issue::precheck(&req, crate::activation::payload::Kind::Activation)
         .map_err(|e| (exit::ACTIVATION_INPUT, e))?;
@@ -394,6 +419,9 @@ fn new_record(env: &mut Env, a: &DeliverArgs, mode: NetworkMode, messenger: &str
         file_id: None,
         network_mode: mode,
         file_transferred: false,
+        features_profile: None,
+        features_fixed: None,
+        directory_role: None,
         code_masked: None,
         calculator_disabled: None,
         customer_ref: a.customer_ref.clone(),
@@ -475,13 +503,18 @@ fn deliver_inner(env: &mut Env, a: &DeliverArgs, o: &mut Out) -> i32 {
                 return c;
             }
         };
-        let st = match open_store(env.cfg, env.ui) {
+        let st = match open_store(env.cfg) {
             Ok(s) => s,
             Err((c, e)) => {
                 o.line(format!("deliver: {e}"));
                 return c;
             }
         };
+        // Before the signing key passphrase: how --features changes the
+        // customer's stored profile (section 12.1).
+        for l in issue::features_change(&st.data, &inputs.req) {
+            o.line(format!("feature profile change: {l}"));
+        }
         let pass = match env.ui.secret(Secret::SigningKeyPassphrase) {
             Ok(p) => p,
             Err(e) => {
@@ -500,7 +533,7 @@ fn deliver_inner(env: &mut Env, a: &DeliverArgs, o: &mut Out) -> i32 {
         session = Some(Session { store: st, signer });
     }
     if a.test_delivery {
-        o.line("TEST DELIVERY: signed with the TEST ONLY key, the record is marked test");
+        o.line("TEST DELIVERY: signed with the TEST ONLY key, the activation code is the fixed lab code of test phones (shown once at the activation), the record is marked test");
     }
     let mut rec = new_record(env, a, inputs.network_mode, &messenger);
     let mut d = Delivery_ {
@@ -681,6 +714,7 @@ impl Delivery_<'_, '_, '_, '_> {
         self.step6_orbot()?;
         self.step7_orbot_setup()?;
         self.step8_install()?;
+        self.require_file_import(8)?;
         self.step9_apps()?;
         self.step10_lock_apps()?;
         self.step11_fdroid()?;
@@ -1161,7 +1195,7 @@ impl Delivery_<'_, '_, '_, '_> {
         }
         l.extend([
             "step 12:".to_string(),
-            format!("  issue the activation file and code (customer {}, {}, store and signing key passphrases asked)", self.a.customer_ref, self.a.network_mode),
+            format!("  issue the activation file and code (customer {}, {}, signing key passphrase asked)", self.a.customer_ref, self.a.network_mode),
             format!("  adb -s {s} shell content call --uri {uri} --method status"),
             format!("  if status names {}=yes: adb -s {s} shell content write --uri {file_uri} < file (standard input)", phone::FILE_IMPORT_CAPABILITY),
             format!("  adb -s {s} shell content call --uri {uri} --method activate --arg <code, shown once, not here>"),
@@ -1205,9 +1239,67 @@ impl Delivery_<'_, '_, '_, '_> {
             format!("  adb -s {s} shell dumpsys jobscheduler {v} (read only, for the record); adb -s {s} shell pm list packages -d ({v} still disabled)"),
             "step 15: fleet record in the admin store".into(),
         ]);
+        // The dry run reads no store: only --features and --directory.
+        match self.file_import_needed() {
+            Some(why) => l.push(format!(
+                "file import: {why}. It needs a messenger that reports {}=yes in status; that is unknown until the messenger is installed. Without it the delivery stops after step 8 (and again at step 12) with nothing issued. A stored profile of the customer is not read in a dry run.",
+                phone::FILE_IMPORT_CAPABILITY
+            )),
+            None => l.push("file import: --features fixes no switch and there is no --directory; a stored profile of the customer is not read in a dry run and is checked after step 8 of the delivery".into()),
+        }
         for x in l {
             self.o.line(x);
         }
+    }
+
+    /// Why this delivery needs the file import (section 12.4): a feature
+    /// profile that fixes a switch, or a directory entry. A real delivery
+    /// takes the profile from `--features` or the store, a dry run only
+    /// from `--features`.
+    fn file_import_needed(&self) -> Option<String> {
+        let features = match self.session.as_ref() {
+            Some(s) => issue::features_for(&s.store.data, &self.req),
+            None => self.req.features.clone(),
+        };
+        let mut why = Vec::new();
+        if let Some(f) = features.filter(|f| f.fixes_any()) {
+            why.push(format!(
+                "customer {}'s feature profile fixes {}",
+                self.req.customer_ref,
+                f.fixed()
+            ));
+        }
+        if let Some(d) = &self.req.directory {
+            why.push(format!(
+                "this phone has a directory entry (role {}, {} group(s))",
+                d.role.as_str(),
+                d.groups.len()
+            ));
+        }
+        (!why.is_empty()).then(|| why.join(" and "))
+    }
+
+    /// After step 8 (the messenger answers `status` once installed) and
+    /// again in step 12: a delivery that needs the file import stops when
+    /// the messenger does not report it, before anything is issued.
+    fn require_file_import(&mut self, step: u8) -> Result<(), Failure> {
+        let Some(why) = self.file_import_needed() else {
+            return Ok(());
+        };
+        let auth = self.authority();
+        let p = self.phone();
+        let st = p
+            .provider_call(&auth, "status", None)
+            .and_then(|m| provider::status(&m))
+            .or_else(|e| fail(step, exit::DELIVERY_FAILED, e))?;
+        if !st.file_import {
+            return fail(step, exit::DELIVERY_FAILED, file_import_refusal(&why));
+        }
+        self.o.line(format!(
+            "  file import: {why}; the messenger reports {}=yes",
+            phone::FILE_IMPORT_CAPABILITY
+        ));
+        Ok(())
     }
 
     fn step8_install(&mut self) -> Result<(), Failure> {
@@ -1444,6 +1536,11 @@ impl Delivery_<'_, '_, '_, '_> {
                 "the provider reports setup=done; refusing",
             );
         }
+        if !st.file_import {
+            if let Some(why) = self.file_import_needed() {
+                return fail(12, exit::DELIVERY_FAILED, file_import_refusal(&why));
+            }
+        }
         let s = self.session.as_mut().expect("real delivery has a session");
         let now = fmt_unix((self.env.now)());
         let issued = if self.a.test_delivery {
@@ -1466,6 +1563,21 @@ impl Delivery_<'_, '_, '_, '_> {
         self.o.hide(&display, &masked);
         self.rec.file_id = Some(issued.issue.file_id.clone());
         self.rec.code_masked = Some(masked.clone());
+        self.rec.features_profile = issued.issue.features_profile.clone();
+        self.rec.features_fixed = issued.issue.features_fixed.clone();
+        self.rec.directory_role = issued.issue.directory_role;
+        if let Some(fp) = &issued.issue.features_profile {
+            self.o.line(format!(
+                "  features_profile {fp}, features_fixed {}",
+                issued.issue.features_fixed.as_deref().unwrap_or("")
+            ));
+        }
+        if let Some(r) = issued.issue.directory_role {
+            self.o.line(format!(
+                "  directory: role {} (no names or links are stored)",
+                r.as_str()
+            ));
+        }
         self.o.line(format!(
             "  issued: file_id {}, customer {}, {}, sequence {}, key_id {}, recorded in the store",
             issued.issue.file_id,
@@ -1625,6 +1737,25 @@ impl Delivery_<'_, '_, '_, '_> {
             );
         }
         self.o.line("  status: activation=yes, setup=open");
+        // Section 12.1: the app reports what it applied; a difference fails.
+        if let (Some(want), true) = (&self.rec.features_profile, self.rec.file_transferred) {
+            let wf = self.rec.features_fixed.clone().unwrap_or_default();
+            if st.features_profile.as_deref() != Some(want.as_str())
+                || st.features_fixed.as_deref() != Some(wf.as_str())
+            {
+                return fail(
+                    14,
+                    exit::DELIVERY_CHECK,
+                    format!(
+                        "the messenger reports features_profile {:?} and features_fixed {:?}, not the issued {want} and {wf:?}",
+                        st.features_profile, st.features_fixed
+                    ),
+                );
+            }
+            self.o.line(format!(
+                "  feature profile applied: features_profile {want}, features_fixed {wf}"
+            ));
+        }
         if !p
             .whitelisted(&pkg)
             .or_else(|e| fail(14, exit::DELIVERY_CHECK, e))?

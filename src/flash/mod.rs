@@ -249,7 +249,7 @@ pub fn flash(env: &mut FlashEnv, out: &mut dyn Write, a: &FlashArgs) -> i32 {
         say.info("flash: no trust material loaded for the attestation after the flash");
         return exit::TRUST_MISSING;
     }
-    let mut store = match open_store(env.cfg, env.ui) {
+    let mut store = match open_store(env.cfg) {
         Ok(s) => s,
         Err((c, e)) => {
             say.info(format!("flash: {e}"));

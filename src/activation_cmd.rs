@@ -8,12 +8,17 @@
 
 use crate::activation::code::Code;
 use crate::activation::container::{self, update_key_id, KDF_ARGON2ID, KDF_UPDATE_KEY};
-use crate::activation::hosts::{mask_server, mask_support, parse_server, parse_support};
+use crate::activation::directory::{parse_directory_file, Directory};
+use crate::activation::features::parse_features_file;
+use crate::activation::hosts::{
+    mask_group_link, mask_server, mask_support, parse_group_link, parse_server, parse_support,
+};
 use crate::activation::issue::{self, parse_servers_file, parse_support_file, Request};
 use crate::activation::keys::{is_test_key, key_id, read_public, KeyFile, TrustedKey};
 use crate::activation::payload::{DeviceClass, Kind, NetworkMode, PayloadOf, RawPayload};
 use crate::activation::rng::SystemRand;
-use crate::activation::store::{self, Store, StoreError, STORE_KDF};
+use crate::activation::store::{self, Store, StoreError};
+use crate::activation::storekey::{self, Backend, Creds};
 use crate::activation::Refusal;
 use crate::config::Config;
 use crate::{exit, names, util};
@@ -42,6 +47,23 @@ pub struct ActOpts {
     pub update_key_from_store: Option<String>,
     pub update_key_file: Option<PathBuf>,
     pub update_key_prompt: bool,
+    /// `--features FILE` (format document section 12.1).
+    pub features: Option<PathBuf>,
+    /// `--directory FILE` (section 12.2), activation files only.
+    pub directory: Option<PathBuf>,
+    /// `inspect --show-names`: the directory's display name in full.
+    pub show_names: bool,
+    /// `activation issue --test-delivery`: a lab file signed with the TEST
+    /// ONLY key (needs `allow_test_key_for_test_deliveries`), always with
+    /// the fixed lab code.
+    pub test_delivery: bool,
+    /// `store migrate --test-delivery`: the old passphrase of a throwaway
+    /// test store from a file.
+    pub test_store_pass_file: Option<PathBuf>,
+    pub test_key_pass_file: Option<PathBuf>,
+    /// `store init` and `store migrate` in a throwaway test config: a key
+    /// file even where the disk encryption is not found.
+    pub allow_unencrypted_disk: bool,
 }
 
 const UPDATE_KEY_FORM: &str =
@@ -126,19 +148,40 @@ pub fn store_path(cfg: &Config) -> Result<PathBuf, String> {
     }
 }
 
-/// Takes the store lock before the passphrase is asked, so a second sxprov
-/// process fails at once (exit 12). The returned store holds the lock until
+/// Takes the store lock before anything is read, so a second sxprov
+/// process fails at once (exit 12), then opens the store with the store key
+/// next to it (nothing is typed). The returned store holds the lock until
 /// the command drops it, after its last write.
 fn open_store(cfg: &Config) -> Result<Store, i32> {
+    open_store_backend(cfg).map(|(s, _)| s)
+}
+
+fn open_store_backend(cfg: &Config) -> Result<(Store, Backend), i32> {
     let path = store_path(cfg).map_err(|e| err(exit::STORE, e))?;
     let lock = Store::lock_for_open(&path).map_err(store_err)?;
-    let pass = prompt("store passphrase: ").map_err(|e| err(exit::STORE, e))?;
-    Store::open_locked(lock, &pass).map_err(store_err)
+    Store::open_locked(lock, &Creds::system()).map_err(store_err)
+}
+
+/// `--allow-unencrypted-disk`: only in a throwaway test config.
+fn allow_unencrypted(cfg: &Config, o: &ActOpts) -> Result<bool, i32> {
+    if o.allow_unencrypted_disk && !cfg.allow_test_key_for_test_deliveries {
+        return Err(err(
+            exit::USAGE,
+            "--allow-unencrypted-disk is only for a throwaway test config (allow_test_key_for_test_deliveries = true)",
+        ));
+    }
+    Ok(o.allow_unencrypted_disk)
 }
 
 // ---- store -------------------------------------------------------------------
 
-pub fn cmd_store_init(cfg: &Config) -> i32 {
+/// `store init`: a new store and its random store key. Nothing is typed;
+/// the output names where the key lives.
+pub fn cmd_store_init(cfg: &Config, o: &ActOpts) -> i32 {
+    let allow = match allow_unencrypted(cfg, o) {
+        Ok(a) => a,
+        Err(c) => return c,
+    };
     let path = match store_path(cfg).map_err(|e| err(exit::STORE, e)) {
         Ok(p) => p,
         Err(c) => return c,
@@ -148,27 +191,127 @@ pub fn cmd_store_init(cfg: &Config) -> i32 {
         Err(e) => return store_err(e),
     };
     let path = lock.store_path().to_path_buf();
-    println!("creating the admin store at {}", path.display());
-    println!(
-        "choose a store passphrase (at least {} characters); without it the store cannot be opened",
-        store::MIN_PASSPHRASE_CHARS
-    );
-    let (a, b) = match (
-        prompt("new store passphrase: "),
-        prompt("repeat the passphrase: "),
-    ) {
-        (Ok(a), Ok(b)) => (a, b),
-        (Err(e), _) | (_, Err(e)) => return err(exit::STORE, e),
+    let creds = Creds::system();
+    let (backend, why) = match storekey::choose(&path, &creds, allow) {
+        Ok(x) => x,
+        Err(e) => return err(exit::STORE, format!("store key: {e}; nothing was created")),
     };
-    if *a != *b {
-        return err(exit::STORE, "the passphrases differ; nothing was created");
-    }
-    match Store::init_locked(lock, &a, STORE_KDF, &mut SystemRand::new()) {
+    match Store::init_locked(lock, backend, &creds, &mut SystemRand::new()) {
         Ok(_) => {
-            println!(
-                "admin store created (encrypted, mode 0600): {}",
-                path.display()
-            );
+            let kp = storekey::key_path(&path, backend);
+            if o.json {
+                println!(
+                    "{}",
+                    json!({"event": "store_created", "store": path, "store_key": kp,
+                           "store_key_backend": backend.id(), "why": why})
+                );
+            } else {
+                println!(
+                    "admin store created (encrypted, mode 0600): {}",
+                    path.display()
+                );
+                println!(
+                    "store key: {} ({why}): {}",
+                    backend.describe(),
+                    kp.display()
+                );
+                println!("nothing is typed to open it; set up the backups now with `backup init`");
+            }
+            exit::OK
+        }
+        Err(e) => store_err(e),
+    }
+}
+
+/// `store migrate`: a passphrase store (container version 1) moves to a
+/// store key. The passphrase is typed one last time (a throwaway test store
+/// may give it with `--test-delivery --test-store-passphrase-file FILE`).
+pub fn cmd_store_migrate(cfg: &Config, o: &ActOpts) -> i32 {
+    let allow = match allow_unencrypted(cfg, o) {
+        Ok(a) => a,
+        Err(c) => return c,
+    };
+    if o.test_store_pass_file.is_some()
+        && !(o.test_delivery && cfg.allow_test_key_for_test_deliveries)
+    {
+        return err(
+            exit::USAGE,
+            "--test-store-passphrase-file needs --test-delivery and a throwaway test config (allow_test_key_for_test_deliveries = true)",
+        );
+    }
+    let path = match store_path(cfg).map_err(|e| err(exit::STORE, e)) {
+        Ok(p) => p,
+        Err(c) => return c,
+    };
+    let lock = match Store::lock_for_open(&path) {
+        Ok(l) => l,
+        Err(e) => return store_err(e),
+    };
+    let path = lock.store_path().to_path_buf();
+    match std::fs::read(&path).map(|r| store::container_version(&r)) {
+        Ok(Ok(store::V1)) => {}
+        Ok(Ok(store::VERSION)) => {
+            return err(
+                exit::STORE,
+                format!(
+                    "{} already opens with a store key; nothing to migrate",
+                    path.display()
+                ),
+            )
+        }
+        Ok(Ok(v)) => return err(exit::STORE, format!("unsupported store version {v}")),
+        Ok(Err(e)) => return store_err(e),
+        Err(e) => return err(exit::STORE, format!("cannot read {}: {e}", path.display())),
+    }
+    let creds = Creds::system();
+    let (backend, why) = match storekey::choose(&path, &creds, allow) {
+        Ok(x) => x,
+        Err(e) => return err(exit::STORE, format!("store key: {e}; nothing was changed")),
+    };
+    let pass = match &o.test_store_pass_file {
+        Some(f) => crate::deliver_cmd::read_pass_file(f).map_err(|e| err(exit::USAGE, e)),
+        None => {
+            if !o.json {
+                println!(
+                    "migrating {} to a store key; the passphrase is asked one last time",
+                    path.display()
+                );
+            }
+            prompt("store passphrase (last time): ").map_err(|e| err(exit::STORE, e))
+        }
+    };
+    let pass = match pass {
+        Ok(p) => p,
+        Err(c) => return c,
+    };
+    match Store::migrate_locked(lock, &pass, backend, &creds, &mut SystemRand::new()) {
+        Ok(m) => {
+            let backend = m.backend;
+            let kp = storekey::key_path(&path, backend);
+            if o.json {
+                println!(
+                    "{}",
+                    json!({"event": "store_migrated", "store": path, "store_key": kp,
+                           "store_key_backend": backend.id(), "why": why,
+                           "passphrase_copy": m.v1_copy})
+                );
+            } else {
+                println!(
+                    "admin store migrated: {} opens with its store key now",
+                    path.display()
+                );
+                println!(
+                    "store key: {} ({why}): {}",
+                    backend.describe(),
+                    kp.display()
+                );
+                println!(
+                    "the passphrase file is kept as {} until the first successful `backup drill`, then deleted",
+                    m.v1_copy.display()
+                );
+            }
+            // The lock goes with the store, after the output.
+            drop(m.store);
             exit::OK
         }
         Err(e) => store_err(e),
@@ -176,10 +319,11 @@ pub fn cmd_store_init(cfg: &Config) -> i32 {
 }
 
 pub fn cmd_store_list(cfg: &Config, o: &ActOpts) -> i32 {
-    let s = match open_store(cfg) {
+    let (s, backend) = match open_store_backend(cfg) {
         Ok(s) => s,
         Err(c) => return c,
     };
+    let key_file = storekey::key_path(s.path(), backend);
     let serial = |v: &Option<String>| -> String {
         match v {
             Some(x) if o.show_serial => x.clone(),
@@ -194,7 +338,10 @@ pub fn cmd_store_list(cfg: &Config, o: &ActOpts) -> i32 {
         .map(|(r, c)| {
             json!({"customer_ref": r, "issues": s.data.issues.iter().filter(|i| &i.customer_ref == r).count(),
                    "last_sequence": c.last_sequence, "earlier_update_keys": c.previous_update_keys.len(),
-                   "created_at": c.created_at})
+                   "created_at": c.created_at,
+                   "features_profile_phone": c.features.phone.as_ref().map(|f| f.profile()),
+                   "features_profile_desktop": c.features.desktop.as_ref().map(|f| f.profile()),
+                   "directory_devices": c.directory_set.as_ref().map(|d| d.devices.len())})
         })
         .collect();
     let issues: Vec<_> = s
@@ -209,11 +356,13 @@ pub fn cmd_store_list(cfg: &Config, o: &ActOpts) -> i32 {
         })
         .collect();
     if o.json {
-        let v = json!({"store": s.path(), "customers": customers, "issues": issues});
+        let v = json!({"store": s.path(), "store_key": key_file, "store_key_backend": backend.id(),
+                       "customers": customers, "issues": issues});
         println!("{}", serde_json::to_string_pretty(&v).unwrap_or_default());
         return exit::OK;
     }
     println!("admin store: {}", s.path().display());
+    println!("store key: {}: {}", backend.describe(), key_file.display());
     println!("\ncustomers ({}):", customers.len());
     for c in &customers {
         println!(
@@ -224,6 +373,17 @@ pub fn cmd_store_list(cfg: &Config, o: &ActOpts) -> i32 {
             c["earlier_update_keys"],
             c["created_at"].as_str().unwrap_or("")
         );
+        for (k, label) in [
+            ("features_profile_phone", "feature profile phone"),
+            ("features_profile_desktop", "feature profile desktop"),
+        ] {
+            if let Some(p) = c[k].as_str() {
+                println!("  {:<20} {label} {p}", "");
+            }
+        }
+        if let Some(n) = c["directory_devices"].as_u64() {
+            println!("  {:<20} directory set with {n} device(s)", "");
+        }
     }
     println!("\nissues ({}):", issues.len());
     for i in &issues {
@@ -308,6 +468,18 @@ fn request(o: &ActOpts, cmd: &str) -> Result<Request, i32> {
         parse_servers_file(&read(&servers)?).map_err(|e| err(exit::ACTIVATION_INPUT, e))?;
     let support_address =
         parse_support_file(&read(&support)?).map_err(|e| err(exit::ACTIVATION_INPUT, e))?;
+    let features = match &o.features {
+        Some(p) => {
+            Some(parse_features_file(&read(p)?).map_err(|e| err(exit::ACTIVATION_INPUT, e))?)
+        }
+        None => None,
+    };
+    let directory = match &o.directory {
+        Some(p) => {
+            Some(parse_directory_file(&read(p)?).map_err(|e| err(exit::ACTIVATION_INPUT, e))?)
+        }
+        None => None,
+    };
     Ok(Request {
         customer_ref,
         device_class,
@@ -316,7 +488,41 @@ fn request(o: &ActOpts, cmd: &str) -> Result<Request, i32> {
         xftp,
         support_address,
         serial: o.serial.clone(),
+        features,
+        directory,
     })
+}
+
+/// What the file will carry of section 12, printed after the store is open
+/// and before the signing key passphrase: the profile, how `--features`
+/// changes the stored one (an `off` switch that is no longer fixed is
+/// named), and the directory role.
+fn print_section_12(data: &store::StoreData, req: &Request) {
+    match issue::features_for(data, req) {
+        Some(f) => {
+            let source = if req.features.is_some() {
+                "from --features, stored for this customer and device class"
+            } else {
+                "the customer's stored profile"
+            };
+            println!(
+                "feature profile ({source}): features_profile={} features_fixed={}",
+                f.profile(),
+                f.fixed()
+            );
+            for l in issue::features_change(data, req) {
+                println!("  change: {l}");
+            }
+        }
+        None => println!("feature profile: none (the file carries no features object)"),
+    }
+    if let Some(d) = &req.directory {
+        println!(
+            "directory: role {}, {} group(s); the store keeps only the set id, a hash of the groups and the role of this serial",
+            d.role.as_str(),
+            d.groups.len()
+        );
+    }
 }
 
 /// Reads the signing key file, refuses the test key and unprotected keys,
@@ -342,16 +548,56 @@ fn signing_key(o: &ActOpts, cmd: &str) -> Result<KeyFile, i32> {
     Ok(kf)
 }
 
+/// `--test-delivery`: the key must be the TEST ONLY key; every other key
+/// is refused, so a real key can never sign a file with the lab code.
+fn test_signing_key(o: &ActOpts, cmd: &str) -> Result<KeyFile, i32> {
+    let path = o
+        .key
+        .as_ref()
+        .ok_or_else(|| err(exit::USAGE, format!("{cmd} needs --key PRIVFILE")))?;
+    let kf = KeyFile::read(path).map_err(|e| err(exit::SIGNING_KEY, e))?;
+    if !is_test_key(&kf.public) {
+        return Err(err(
+            exit::SIGNING_KEY,
+            "--test-delivery signs only with the TEST ONLY key; refusing this key",
+        ));
+    }
+    Ok(kf)
+}
+
 fn issue_common(cfg: &Config, o: &ActOpts, kind: Kind) -> i32 {
     let cmd = if kind == Kind::Activation {
         "activation issue"
     } else {
         "activation update"
     };
-    if kind == Kind::Activation && !std::io::stdout().is_terminal() {
+    let test = o.test_delivery;
+    if !test && o.test_key_pass_file.is_some() {
+        return err(
+            exit::USAGE,
+            "--test-key-passphrase-file is only for --test-delivery",
+        );
+    }
+    if test && kind == Kind::Update {
+        return err(exit::USAGE, "--test-delivery is for activation issue only");
+    }
+    if test && !cfg.allow_test_key_for_test_deliveries {
+        return err(
+            exit::SIGNING_KEY,
+            "--test-delivery needs allow_test_key_for_test_deliveries = true in the config",
+        );
+    }
+    // A test file's code is the published lab code, so no terminal is needed.
+    if kind == Kind::Activation && !test && !std::io::stdout().is_terminal() {
         return err(
             exit::ACTIVATION_INPUT,
             "activation issue prints the activation code once and needs a terminal on standard output (no redirection)",
+        );
+    }
+    if kind == Kind::Update && o.directory.is_some() {
+        return err(
+            exit::USAGE,
+            "--directory is for activation issue only; an update never carries a directory",
         );
     }
     let req = match request(o, cmd) {
@@ -392,7 +638,11 @@ fn issue_common(cfg: &Config, o: &ActOpts, kind: Kind) -> i32 {
             format!("{} already exists; choose a new --out file", out.display()),
         );
     }
-    let kf = match signing_key(o, cmd) {
+    let kf = match if test {
+        test_signing_key(o, cmd)
+    } else {
+        signing_key(o, cmd)
+    } {
         Ok(k) => k,
         Err(c) => return c,
     };
@@ -400,11 +650,23 @@ fn issue_common(cfg: &Config, o: &ActOpts, kind: Kind) -> i32 {
         Ok(s) => s,
         Err(c) => return c,
     };
-    let pass = match prompt("passphrase of the activation signing key: ") {
-        Ok(p) => p,
-        Err(e) => return err(exit::SIGNING_KEY, e),
+    print_section_12(&st.data, &req);
+    let pass = match (test, &o.test_key_pass_file) {
+        (true, Some(f)) => crate::deliver_cmd::read_pass_file(f).map_err(|e| err(exit::USAGE, e)),
+        (true, None) if !kf.is_encrypted() => Ok(Zeroizing::new(String::new())),
+        _ => prompt("passphrase of the activation signing key: ")
+            .map_err(|e| err(exit::SIGNING_KEY, e)),
     };
-    let signer = match kf.unlock(Some(&pass)) {
+    let pass = match pass {
+        Ok(p) => p,
+        Err(c) => return c,
+    };
+    let unlocked = if kf.is_encrypted() {
+        kf.unlock(Some(&pass))
+    } else {
+        kf.unlock(None)
+    };
+    let signer = match unlocked {
         Ok(s) => s,
         Err(e) => return err(exit::SIGNING_KEY, e),
     };
@@ -412,6 +674,10 @@ fn issue_common(cfg: &Config, o: &ActOpts, kind: Kind) -> i32 {
     let now = util::fmt_unix(util::now_unix());
     let mut rng = SystemRand::new();
     let result = match kind {
+        Kind::Activation if test => {
+            println!("TEST FILE: signed with the TEST ONLY key; the activation code is the fixed lab code of test devices");
+            issue::activation_test_delivery(&mut st.data, &req, &signer, &mut rng, &now)
+        }
         Kind::Activation => issue::activation(&mut st.data, &req, &signer, &mut rng, &now),
         Kind::Update => issue::update(
             &mut st.data,
@@ -464,6 +730,12 @@ fn issue_common(cfg: &Config, o: &ActOpts, kind: Kind) -> i32 {
             ""
         }
     );
+    if let (Some(fp), Some(ff)) = (&i.features_profile, &i.features_fixed) {
+        println!("  features_profile={fp} features_fixed={ff}");
+    }
+    if let Some(r) = i.directory_role {
+        println!("  directory: role {}", r.as_str());
+    }
     println!("  recorded in the admin store; the store keeps no copy of the file");
     if let Some(code) = &issued.code {
         println!("\nACTIVATION CODE (shown once, not stored anywhere):\n");
@@ -483,7 +755,35 @@ pub fn cmd_update(cfg: &Config, o: &ActOpts) -> i32 {
 
 // ---- activation inspect ------------------------------------------------------
 
-fn masked_payload<M: serde::Serialize>(p: &PayloadOf<M>) -> serde_json::Value {
+/// The directory for `inspect`: the display name hidden unless
+/// `--show-names`, the group links masked like the support address.
+fn masked_directory(d: &Directory, show_names: bool) -> serde_json::Value {
+    let name = if show_names {
+        json!(d.display_name)
+    } else {
+        json!(format!(
+            "<hidden, {} characters; --show-names shows it>",
+            d.display_name.chars().count()
+        ))
+    };
+    let groups: Vec<_> = d
+        .groups
+        .iter()
+        .map(|g| {
+            let link = match parse_group_link(&g.link) {
+                Ok(l) => mask_group_link(&l),
+                Err(e) => json!({"invalid": e}),
+            };
+            json!({"name": g.name, "link": link, "direct_contacts": g.direct_contacts})
+        })
+        .collect();
+    json!({
+        "directory_version": d.directory_version, "set_id": d.set_id, "display_name": name,
+        "role": d.role, "groups": groups,
+    })
+}
+
+fn masked_payload<M: serde::Serialize>(p: &PayloadOf<M>, show_names: bool) -> serde_json::Value {
     let servers = |list: &[String], scheme: &str| -> Vec<String> {
         list.iter()
             .map(|a| {
@@ -497,14 +797,21 @@ fn masked_payload<M: serde::Serialize>(p: &PayloadOf<M>) -> serde_json::Value {
         Ok(s) => mask_support(&s),
         Err(e) => json!({"invalid": e}),
     };
-    json!({
+    let mut v = json!({
         "payload_version": p.payload_version, "kind": p.kind, "file_id": p.file_id, "issued_at": p.issued_at,
         "customer_ref": p.customer_ref, "device_class": p.device_class, "network_mode": p.network_mode,
         "sequence": p.sequence,
         "servers": {"smp": servers(&p.servers.smp, "smp"), "xftp": servers(&p.servers.xftp, "xftp")},
         "support_address": support,
         "update_key": if p.update_key.is_some() { "present (hidden)" } else { "absent" },
-    })
+    });
+    if let Some(f) = &p.features {
+        v["features"] = json!(f);
+    }
+    if let Some(d) = &p.directory {
+        v["directory"] = masked_directory(d, show_names);
+    }
+    v
 }
 
 pub fn cmd_inspect(cfg_loader: &dyn Fn() -> Result<Config, i32>, o: &ActOpts, file: &str) -> i32 {
@@ -696,8 +1003,11 @@ pub fn cmd_inspect(cfg_loader: &dyn Fn() -> Result<Config, i32>, o: &ActOpts, fi
         } else {
             Kind::Update
         };
+        // The switches' device class rule against the file's own class,
+        // as the app of that class checks it.
         let v = raw
             .check_fields(container_kind)
+            .and_then(|()| raw.check_class_rules())
             .and_then(|()| raw.clone().into_payload())
             .and_then(|p| p.check_addresses());
         Ok((raw, v))
@@ -709,12 +1019,22 @@ pub fn cmd_inspect(cfg_loader: &dyn Fn() -> Result<Config, i32>, o: &ActOpts, fi
             finish(out, lines, exit::ACTIVATION_REFUSED)
         }
         Ok((p, v)) => {
-            let m = masked_payload(&p);
-            lines.push("payload (hosts masked, passwords and the update key hidden):".into());
+            let m = masked_payload(&p, o.show_names);
+            lines.push(
+                "payload (hosts masked, passwords, the update key and the display name hidden):"
+                    .into(),
+            );
             for l in serde_json::to_string_pretty(&m).unwrap_or_default().lines() {
                 lines.push(format!("  {l}"));
             }
             out["payload"] = m;
+            // The status lines the app reports after the import (12.1).
+            if let Some(f) = &p.features {
+                lines.push(format!("features_profile={}", f.profile()));
+                lines.push(format!("features_fixed={}", f.fixed()));
+                out["features_profile"] = json!(f.profile());
+                out["features_fixed"] = json!(f.fixed());
+            }
             match v {
                 Ok(()) => {
                     out["result"] = json!("ok");
@@ -815,6 +1135,214 @@ mod tests {
         };
         let path = fixtures().join(file);
         cmd_inspect(&|| Err(exit::CONFIG), &o, path.to_str().unwrap())
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn inspect_section_12() {
+        use crate::activation::features::tests::example;
+        use crate::activation::payload::tests::{sample, with_directory};
+        use crate::activation::payload::NetworkMode;
+        let mut p = with_directory(sample(Kind::Activation, NetworkMode::TorRequired), 2);
+        p.features = Some(example());
+        let link = p.directory.as_ref().unwrap().groups[0].link.clone();
+        let m = masked_payload(&p, false).to_string();
+        assert!(
+            m.contains("<hidden, 9 characters; --show-names shows it>"),
+            "{m}"
+        );
+        assert!(
+            !m.contains("TEST Anna") && !m.contains(&link) && m.contains("TEST Gruppe 0"),
+            "{m}"
+        );
+        assert!(
+            m.contains("\"groups\":\"off\"") && m.contains("\"form\":\"test..."),
+            "{m}"
+        );
+        let shown = masked_payload(&p, true).to_string();
+        assert!(shown.contains("\"display_name\":\"TEST Anna\""), "{shown}");
+        assert!(!shown.contains(&link), "{shown}");
+        // Without section 12 objects the masked payload has no new keys.
+        let plain = masked_payload(&sample(Kind::Activation, NetworkMode::TorRequired), false);
+        assert!(plain.get("features").is_none() && plain.get("directory").is_none());
+        // The update vectors of section 12 with the installation's key.
+        let d = temp_dir("inspect-s12");
+        let k = d.join("update.key");
+        write_mode(
+            &k,
+            format!("{}\n", vector_key("update-phone-features-change")).as_bytes(),
+            0o600,
+        );
+        for (f, want) in [
+            ("update-phone-features-change.sxact", exit::OK),
+            ("update-phone-without-features.sxact", exit::OK),
+            ("refused-update-directory.sxact", exit::ACTIVATION_REFUSED),
+            (
+                "refused-update-features-phone-desktop-switch-on.sxact",
+                exit::ACTIVATION_REFUSED,
+            ),
+        ] {
+            assert_eq!(inspect(f, Some(k.clone()), false), want, "{f}");
+        }
+        std::fs::remove_dir_all(&d).unwrap();
+    }
+
+    /// `activation issue --test-delivery`: the TEST ONLY key always gives
+    /// the fixed lab code; without the switch or the flag it is refused.
+    #[cfg(unix)]
+    #[test]
+    fn issue_test_file_with_the_lab_code() {
+        use crate::activation::code::LAB_CODE;
+        use crate::activation::import::import_activation;
+        use crate::activation::payload::tests::sample;
+        use crate::activation::payload::NetworkMode;
+        use crate::activation::store::tests::{init_test_store, open_test_store};
+        let _g = crate::activation::store::tests::one_at_a_time();
+        let d = temp_dir("issue-lab");
+        let store = d.join("admin.sxdb");
+        // No store passphrase file any more: the store opens with its key.
+        drop(init_test_store(&store, b"lab"));
+        write_mode(&d.join("key-pass"), b"TEST-ONLY-PASSPHRASE\n", 0o600);
+        let p = sample(Kind::Activation, NetworkMode::TorRequired);
+        std::fs::write(
+            d.join("servers.txt"),
+            format!("{}\n{}\n", p.servers.smp[0], p.servers.xftp[0]),
+        )
+        .unwrap();
+        std::fs::write(d.join("support.txt"), format!("{}\n", p.support_address)).unwrap();
+        let cfg_for = |allow: bool| {
+            Config::parse(&format!(
+                "trust_cache_dir = \"{dir}/trust\"\nadb_path = \"{dir}/adb\"\nfastboot_path = \"\"\n\
+                 agent_apk = \"{dir}/agent.apk\"\nagent_signing_cert_sha256 = \"{a5}\"\n\
+                 admin_store_path = \"{}\"\nallow_test_key_for_test_deliveries = {allow}\n",
+                store.display(),
+                dir = d.display(),
+                a5 = "a5".repeat(32),
+            ))
+            .unwrap()
+        };
+        let opts = |out: &str| ActOpts {
+            customer_ref: Some("TEST-LAPTOP-0001".into()),
+            device_class: Some("desktop".into()),
+            network_mode: Some("tor_required".into()),
+            servers: Some(d.join("servers.txt")),
+            support: Some(d.join("support.txt")),
+            key: Some(fixtures().join("keys/sxact-TEST-ONLY-signing-key-encrypted")),
+            out: Some(d.join(out)),
+            test_delivery: true,
+            test_key_pass_file: Some(d.join("key-pass")),
+            ..Default::default()
+        };
+        assert_eq!(cmd_issue(&cfg_for(true), &opts("lab.sxact")), exit::OK);
+        let file = std::fs::read(d.join("lab.sxact")).unwrap();
+        let trusted = [TrustedKey::new(
+            "test",
+            read_public(&fixtures().join("keys/sxact-TEST-ONLY-signing-key.pub")).unwrap(),
+        )];
+        let p = import_activation(&file, &trusted, LAB_CODE, DeviceClass::Desktop).unwrap();
+        assert_eq!(p.customer_ref, "TEST-LAPTOP-0001");
+        assert!(p.features.is_none() && p.directory.is_none());
+        let st = open_test_store(&store);
+        assert_eq!(
+            st.data.issues[0].code_masked.as_deref(),
+            Some("7*****+*****2")
+        );
+        drop(st);
+        // Without the config switch, without --test-delivery, for an update.
+        assert_eq!(
+            cmd_issue(&cfg_for(false), &opts("a.sxact")),
+            exit::SIGNING_KEY
+        );
+        let mut real = opts("b.sxact");
+        real.test_delivery = false;
+        real.test_key_pass_file = None;
+        // (no terminal in the test: refused before the key; with one, the
+        // TEST ONLY key is refused by signing_key)
+        assert_ne!(cmd_issue(&cfg_for(true), &real), exit::OK);
+        let mut files_only = opts("c.sxact");
+        files_only.test_delivery = false;
+        assert_eq!(cmd_issue(&cfg_for(true), &files_only), exit::USAGE);
+        assert_eq!(cmd_update(&cfg_for(true), &opts("d.sxact")), exit::USAGE);
+        for f in ["a.sxact", "b.sxact", "c.sxact", "d.sxact"] {
+            assert!(!d.join(f).exists(), "{f}");
+        }
+        std::fs::remove_dir_all(&d).unwrap();
+    }
+
+    /// `store init` writes a store and its key without typing; `store
+    /// migrate` moves a passphrase store once, from a test passphrase file
+    /// only in a throwaway test config.
+    #[cfg(unix)]
+    #[test]
+    fn store_init_and_migrate_commands() {
+        use crate::activation::rng::SeededRand;
+        use crate::activation::store::tests::{open_test_store, write_v1};
+        use crate::activation::store::{backup_path, TEST_KDF};
+        let _g = crate::activation::store::tests::one_at_a_time();
+        let d = temp_dir("store-cmds");
+        let cfg_for = |store: &Path, allow: bool| {
+            Config::parse(&format!(
+                "trust_cache_dir = \"{dir}/trust\"\nadb_path = \"{dir}/adb\"\nfastboot_path = \"\"\n\
+                 agent_apk = \"{dir}/agent.apk\"\nagent_signing_cert_sha256 = \"{a5}\"\n\
+                 admin_store_path = \"{}\"\nallow_test_key_for_test_deliveries = {allow}\n",
+                store.display(),
+                dir = d.display(),
+                a5 = "a5".repeat(32),
+            ))
+            .unwrap()
+        };
+        let test_opts = ActOpts {
+            allow_unencrypted_disk: true,
+            ..Default::default()
+        };
+        // init: a store and a key file, no passphrase.
+        let fresh = d.join("fresh/admin.sxdb");
+        assert_eq!(cmd_store_init(&cfg_for(&fresh, true), &test_opts), exit::OK);
+        assert!(storekey::key_path(&fresh, Backend::File).exists());
+        assert!(open_test_store(&fresh).data.customers.is_empty());
+        assert_eq!(
+            cmd_store_init(&cfg_for(&fresh, true), &test_opts),
+            exit::STORE
+        );
+        // --allow-unencrypted-disk outside a test config is refused.
+        let other = d.join("other/admin.sxdb");
+        assert_eq!(
+            cmd_store_init(&cfg_for(&other, false), &test_opts),
+            exit::USAGE
+        );
+        assert!(!other.exists());
+        // migrate: a version 1 store with a test passphrase file.
+        let old = d.join("old/admin.sxdb");
+        let v4 = r#"{"store_version":4,"customers":{},"issues":[],"deliveries":[],"flashes":[]}"#;
+        write_v1(
+            &old,
+            "TEST-ONLY store pass",
+            TEST_KDF,
+            v4.as_bytes(),
+            &mut SeededRand::new(b"o"),
+        );
+        write_mode(&d.join("store-pass"), b"TEST-ONLY store pass\n", 0o600);
+        let mig = ActOpts {
+            test_delivery: true,
+            test_store_pass_file: Some(d.join("store-pass")),
+            allow_unencrypted_disk: true,
+            ..Default::default()
+        };
+        // The pass file without a test config: refused, nothing changed.
+        let mut real = cfg_for(&old, false);
+        assert_eq!(cmd_store_migrate(&real, &mig), exit::USAGE);
+        real.allow_test_key_for_test_deliveries = true;
+        assert_eq!(cmd_store_migrate(&real, &mig), exit::OK);
+        let s = open_test_store(&old);
+        assert_eq!(s.data.store_version, store::CONTENT_VERSION);
+        drop(s);
+        assert!(d.join("old/admin.sxdb.v1-before-store-key").exists());
+        assert_eq!(
+            std::fs::read(backup_path(&old)).unwrap(),
+            std::fs::read(&old).unwrap()
+        );
+        assert_eq!(cmd_store_migrate(&real, &mig), exit::STORE);
+        std::fs::remove_dir_all(&d).unwrap();
     }
 
     #[cfg(unix)]

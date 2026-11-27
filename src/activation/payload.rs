@@ -11,8 +11,21 @@
 //! ([`RawPayload::into_payload`]), then the server and support address rules
 //! ([`Payload::check_addresses`]). So a payload that breaks several rules is
 //! refused for the first of them in this order.
+//!
+//! The optional `features` and `directory` objects (section 12) follow the
+//! same order: their structure and field rules in step 5 (inside both
+//! objects fail closed: an unknown name, value or field refuses the file),
+//! the device class rule of the switches right after the device class
+//! ([`PayloadOf::check_class_rules`]), the group links with the other
+//! addresses: grammar first, then the network mode rules over every
+//! address, then the server match of section 12.4.
 
-use super::hosts::{classify, parse_server, parse_support, HostKind, SupportForm};
+use super::directory::Directory;
+use super::features::Features;
+use super::hosts::{
+    classify, parse_group_link, parse_server, parse_support, same_server, HostKind, ServerAddress,
+    SupportForm,
+};
 use super::Refusal;
 use serde::{Deserialize, Serialize};
 use zeroize::Zeroize;
@@ -142,6 +155,23 @@ pub struct PayloadOf<M> {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub update_key: Option<String>,
     pub sequence: u64,
+    /// Section 12.1: in both kinds. In an update, absent means the
+    /// installed profile stays; present replaces it (12.4).
+    /// When present, an object: `null` or another type is refused rather
+    /// than read as absent (fail closed).
+    #[serde(
+        default,
+        deserialize_with = "super::strict::object",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub features: Option<Features>,
+    /// Section 12.2: only in activation files.
+    #[serde(
+        default,
+        deserialize_with = "super::strict::object",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub directory: Option<Directory>,
 }
 
 pub type Payload = PayloadOf<NetworkMode>;
@@ -246,15 +276,35 @@ impl<M> PayloadOf<M> {
         if self.kind == Kind::Update && self.sequence < 1 {
             return bad("sequence starts at 1 in an update file");
         }
+        if let Some(f) = &self.features {
+            f.check().map_err(Refusal::BadPayload)?;
+        }
+        if let Some(d) = &self.directory {
+            if self.kind == Kind::Update {
+                return bad("directory is carried only in activation files, never in an update");
+            }
+            d.check_fields().map_err(Refusal::BadPayload)?;
+        }
+        Ok(())
+    }
+
+    /// Section 6 step 6, right after the device class (section 12.1): a
+    /// desktop-only switch may be `off` or `ask` in a phone file, not `on`.
+    pub fn check_class_rules(&self) -> Result<(), Refusal> {
+        if let Some(f) = &self.features {
+            f.check_class(self.device_class)
+                .map_err(Refusal::BadPayload)?;
+        }
         Ok(())
     }
 }
 
 impl RawPayload {
     /// Section 6 step 5: parse. `network_mode` is only required to be a
-    /// string here; its value is checked in step 6.
+    /// string here; its value is checked in step 6. The payload must be a
+    /// JSON object (serde alone would also read an array of the fields).
     pub fn from_json(bytes: &[u8]) -> Result<RawPayload, Refusal> {
-        serde_json::from_slice(bytes).map_err(|e| Refusal::BadPayload(e.to_string()))
+        super::strict::from_slice(bytes).map_err(|e| Refusal::BadPayload(e.to_string()))
     }
 
     /// Section 6 step 6, after the device class: the network mode value.
@@ -276,6 +326,8 @@ impl RawPayload {
             support_address: take(&mut self.support_address),
             update_key: self.update_key.take(),
             sequence: self.sequence,
+            features: self.features.take(),
+            directory: self.directory.take(),
         })
     }
 }
@@ -295,12 +347,15 @@ impl Payload {
     /// `container` (used when issuing; the device class is the request's).
     pub fn validate(&self, container: Kind) -> Result<(), Refusal> {
         self.check_fields(container)?;
+        self.check_class_rules()?;
         self.check_addresses()
     }
 
-    /// Section 6 step 6, last: the server and support address rules. Every
-    /// address is parsed first (fingerprint, password, hosts), then the
-    /// network mode rules are checked over all of them.
+    /// Section 6 step 6, last: the server, support address and group link
+    /// rules. Every address is parsed first (fingerprint, password, hosts,
+    /// the group link grammar), then the network mode rules are checked
+    /// over all of them, then every group link's server must be one of
+    /// `servers.smp` (section 12.4).
     pub fn check_addresses(&self) -> Result<(), Refusal> {
         if self.servers.smp.is_empty() || self.servers.xftp.is_empty() {
             return Err(Refusal::BadPayload(
@@ -309,6 +364,7 @@ impl Payload {
         }
         // (name, host kinds, is a support address queue)
         let mut addresses: Vec<(String, Vec<HostKind>, bool)> = Vec::new();
+        let mut smp_servers: Vec<ServerAddress> = Vec::new();
         for (scheme, list) in [("smp", &self.servers.smp), ("xftp", &self.servers.xftp)] {
             for (i, a) in list.iter().enumerate() {
                 let s = parse_server(a, scheme)
@@ -320,6 +376,9 @@ impl Payload {
                     .collect::<Result<Vec<_>, _>>()
                     .map_err(Refusal::BadPayload)?;
                 addresses.push((format!("servers.{scheme}[{i}]"), kinds, false));
+                if scheme == "smp" {
+                    smp_servers.push(s);
+                }
             }
         }
         let support = parse_support(&self.support_address).map_err(Refusal::BadPayload)?;
@@ -337,6 +396,27 @@ impl Payload {
             };
             addresses.push((name, kinds, true));
         }
+        let mut group_servers = Vec::new();
+        for (i, g) in self
+            .directory
+            .iter()
+            .flat_map(|d| d.groups.iter())
+            .enumerate()
+        {
+            let name = format!("directory.groups[{i}].link");
+            let l = parse_group_link(&g.link)
+                .map_err(|e| Refusal::BadPayload(format!("{name}: {e}")))?;
+            let kinds = l
+                .server
+                .hosts
+                .iter()
+                .map(|h| classify(h))
+                .collect::<Result<Vec<_>, _>>()
+                .map_err(Refusal::BadPayload)?;
+            // Group links follow the rule of the servers (section 12.2).
+            addresses.push((name.clone(), kinds, false));
+            group_servers.push((name, l.server));
+        }
         for (name, kinds, is_support) in &addresses {
             let rule = if *is_support {
                 self.network_mode.check_support(kinds)
@@ -344,6 +424,13 @@ impl Payload {
                 self.network_mode.check(kinds)
             };
             rule.map_err(|e| Refusal::NetworkModeRule(format!("{name}: {e}")))?;
+        }
+        for (name, server) in &group_servers {
+            if !smp_servers.iter().any(|s| same_server(server, s)) {
+                return Err(Refusal::BadPayload(format!(
+                    "{name}: the link's server (hosts, port and key hash c) is not one of servers.smp"
+                )));
+            }
         }
         Ok(())
     }
@@ -417,6 +504,8 @@ pub mod tests {
                 Kind::Activation => 0,
                 Kind::Update => 1,
             },
+            features: None,
+            directory: None,
         }
     }
 
@@ -624,6 +713,198 @@ pub mod tests {
         u.sequence = 1;
         u.update_key = Some("cd".repeat(32));
         assert!(u.validate(Kind::Update).is_ok());
+    }
+
+    /// A directory whose group links are on the payload's first SMP server.
+    pub fn with_directory(mut p: Payload, groups: usize) -> Payload {
+        use crate::activation::directory::{Directory, DirectoryGroup, Role};
+        use crate::activation::hosts::tests::group_link_on;
+        let s = parse_server(&p.servers.smp[0], "smp").unwrap();
+        p.directory = Some(Directory {
+            directory_version: 1,
+            set_id: "5e".repeat(16),
+            display_name: "TEST Anna".into(),
+            role: Role::Member,
+            groups: (0..groups)
+                .map(|i| DirectoryGroup {
+                    name: format!("TEST Gruppe {i}"),
+                    link: group_link_on(&s, &format!("TEST-ONLY-GROUP-LINK-KEY-{i}")),
+                    direct_contacts: i == 0,
+                })
+                .collect(),
+        });
+        p
+    }
+
+    #[test]
+    fn section_12_features() {
+        use crate::activation::features::tests::example;
+        use crate::activation::features::FeatureValue;
+        for kind in [Kind::Activation, Kind::Update] {
+            let mut p = sample(kind, NetworkMode::TorRequired);
+            p.features = Some(example());
+            p.validate(kind).unwrap();
+            let back = Payload::from_json(&p.to_json()).unwrap();
+            assert_eq!(back, p);
+            let mut v = p.features.clone().unwrap();
+            v.profile_version = 2;
+            p.features = Some(v);
+            assert!(
+                matches!(p.validate(kind), Err(Refusal::BadPayload(e)) if e.contains("profile_version"))
+            );
+        }
+        // A desktop-only switch in a phone file: on refused, off and ask accepted.
+        let mut p = sample(Kind::Activation, NetworkMode::TorRequired);
+        for (v, ok) in [
+            (FeatureValue::On, false),
+            (FeatureValue::Off, true),
+            (FeatureValue::Ask, true),
+        ] {
+            let mut f = example();
+            f.vault = Some(v);
+            p.features = Some(f);
+            assert_eq!(p.validate(Kind::Activation).is_ok(), ok, "{v:?}");
+            p.device_class = DeviceClass::Desktop;
+            p.validate(Kind::Activation).unwrap();
+            p.device_class = DeviceClass::Phone;
+        }
+        // Inside the object fail closed, outside unknown fields ignored.
+        let p = sample(Kind::Activation, NetworkMode::TorRequired);
+        let mut v: serde_json::Value = serde_json::from_slice(&p.to_json()).unwrap();
+        v["features"] = serde_json::json!({"profile_version": 1, "groups": "off"});
+        assert!(Payload::from_json(v.to_string().as_bytes()).is_ok());
+        for bad in [
+            serde_json::json!({"profile_version": 1, "stories": "off"}),
+            serde_json::json!({"profile_version": 1, "groups": "disabled"}),
+            serde_json::json!({"groups": "off"}),
+            serde_json::json!({"profile_version": 1.0}),
+            serde_json::json!(null),
+            serde_json::json!("off"),
+        ] {
+            let mut w = v.clone();
+            w["features"] = bad.clone();
+            assert!(
+                matches!(
+                    RawPayload::from_json(w.to_string().as_bytes()),
+                    Err(Refusal::BadPayload(_))
+                ),
+                "{bad}"
+            );
+        }
+        let dup = v.to_string().replacen(
+            "\"groups\":\"off\"",
+            "\"groups\":\"off\",\"groups\":\"on\"",
+            1,
+        );
+        assert!(RawPayload::from_json(dup.as_bytes()).is_err());
+        // The features object, and the payload itself, as an array of the
+        // fields in order: serde alone reads them, the strict reader not.
+        let mut w = v.clone();
+        w["features"] = serde_json::json!([1, "off"]);
+        assert!(RawPayload::from_json(w.to_string().as_bytes()).is_err());
+        let fields: Vec<serde_json::Value> = [
+            "payload_version",
+            "kind",
+            "file_id",
+            "issued_at",
+            "customer_ref",
+            "device_class",
+            "network_mode",
+            "servers",
+            "support_address",
+            "update_key",
+            "sequence",
+        ]
+        .iter()
+        .map(|k| v[*k].clone())
+        .collect();
+        let arr = serde_json::to_vec(&fields).unwrap();
+        assert!(serde_json::from_slice::<RawPayload>(&arr).is_ok());
+        assert!(
+            matches!(RawPayload::from_json(&arr), Err(Refusal::BadPayload(e)) if e.contains("JSON object"))
+        );
+    }
+
+    #[test]
+    fn section_12_directory() {
+        let p = with_directory(sample(Kind::Activation, NetworkMode::TorRequired), 2);
+        p.validate(Kind::Activation).unwrap();
+        assert_eq!(Payload::from_json(&p.to_json()).unwrap(), p);
+        // tor_optional: the server has an onion and a clearnet host, the
+        // link carries both.
+        let q = with_directory(sample(Kind::Activation, NetworkMode::TorOptional), 1);
+        q.validate(Kind::Activation).unwrap();
+        assert!(q.directory.as_ref().unwrap().groups[0]
+            .link
+            .contains("?h=smp-a.example.invalid&c="));
+        // Never in an update.
+        let mut u = with_directory(sample(Kind::Update, NetworkMode::TorRequired), 1);
+        assert!(
+            matches!(u.validate(Kind::Update), Err(Refusal::BadPayload(e)) if e.contains("only in activation files"))
+        );
+        u.directory = None;
+        u.validate(Kind::Update).unwrap();
+        let change = |f: &dyn Fn(&mut Payload)| {
+            let mut p = with_directory(sample(Kind::Activation, NetworkMode::TorRequired), 2);
+            f(&mut p);
+            p.validate(Kind::Activation)
+        };
+        let link = |p: &mut Payload, l: String| p.directory.as_mut().unwrap().groups[1].link = l;
+        use crate::activation::hosts::tests::{fake43, key_hash};
+        let kh = key_hash("TEST-ONLY-SMP-1");
+        // A clearnet link host in tor_required: the mode rule.
+        assert!(matches!(
+            change(&|p| link(p, format!("https://smp-a.example.invalid/g#{}?c={kh}", fake43("K")))),
+            Err(Refusal::NetworkModeRule(e)) if e.contains("directory.groups[1].link")
+        ));
+        // An onion link host on another server: the server match (12.4).
+        let other = crate::activation::hosts::tests::fake_onion("testonlyother");
+        assert!(matches!(
+            change(&|p| link(p, format!("https://{other}/g#{}?c={kh}", fake43("K")))),
+            Err(Refusal::BadPayload(e)) if e.contains("not one of servers.smp")
+        ));
+        let o = crate::activation::hosts::tests::fake_onion("testonlysmpa");
+        assert!(matches!(
+            change(&|p| link(p, format!("https://{o}/g#{}?c={}", fake43("K"), key_hash("TEST-ONLY-SMP-2")))),
+            Err(Refusal::BadPayload(e)) if e.contains("not one of servers.smp")
+        ));
+        // Grammar: before any mode rule.
+        assert!(matches!(
+            change(&|p| link(p, format!("https://{o}/c#{}?c={kh}", fake43("K")))),
+            Err(Refusal::BadPayload(e)) if e.contains("groups[1].link: group link: /c# is a channel link")
+        ));
+        // Field rules: names, counts, version, set_id.
+        assert!(matches!(
+            change(&|p| p.directory.as_mut().unwrap().display_name = "Dr. Weber".into()),
+            Err(Refusal::BadPayload(e)) if e.contains("display_name") && !e.contains("Weber")
+        ));
+        assert!(matches!(
+            change(&|p| p.directory.as_mut().unwrap().groups.clear()),
+            Err(Refusal::BadPayload(e)) if e.contains("1 to 20")
+        ));
+        // Unknown field inside directory, inside a group, null: refused.
+        let mut v: serde_json::Value = serde_json::from_slice(&p.to_json()).unwrap();
+        for f in [
+            |v: &mut serde_json::Value| v["directory"]["nickname"] = "x".into(),
+            |v: &mut serde_json::Value| v["directory"]["groups"][0]["admin"] = true.into(),
+            |v: &mut serde_json::Value| v["directory"]["role"] = "admin".into(),
+            |v: &mut serde_json::Value| v["directory"] = serde_json::Value::Null,
+            |v: &mut serde_json::Value| {
+                v["directory"].as_object_mut().unwrap().remove("set_id");
+            },
+        ] {
+            let mut w = v.clone();
+            f(&mut w);
+            assert!(matches!(
+                RawPayload::from_json(w.to_string().as_bytes()),
+                Err(Refusal::BadPayload(_))
+            ));
+        }
+        v.as_object_mut().unwrap().remove("directory");
+        assert!(Payload::from_json(v.to_string().as_bytes())
+            .unwrap()
+            .directory
+            .is_none());
     }
 
     #[test]

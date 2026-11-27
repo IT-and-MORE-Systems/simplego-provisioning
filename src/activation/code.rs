@@ -11,6 +11,11 @@ use super::rng::{uniform_u32, Rand};
 use zeroize::{Zeroize, Zeroizing};
 
 pub const CODE_LEN: usize = 13;
+
+/// The fixed lab code of every delivery to a test phone (`deliver
+/// --test-delivery`, TEST ONLY key, throwaway test config), published and
+/// TEST ONLY. Customer phones always get a random code.
+pub const LAB_CODE: &str = "727272+727272";
 const OPERATORS: [u8; 4] = *b"+-x:";
 
 pub struct Code([u8; CODE_LEN]);
@@ -33,6 +38,13 @@ impl Code {
         out[6] = op;
         write_digits(&mut out[7..13], *b);
         Ok(Code(out))
+    }
+
+    /// The fixed lab code (`LAB_CODE`), for test phones only.
+    pub fn lab() -> Code {
+        let mut out = [0u8; CODE_LEN];
+        out.copy_from_slice(LAB_CODE.as_bytes());
+        Code(out)
     }
 
     /// The 13 canonical ASCII bytes, the Argon2id password.
@@ -112,6 +124,18 @@ mod tests {
 
     fn canon(s: &str) -> Result<String, String> {
         Code::parse_input(s).map(|c| String::from_utf8(c.canonical().to_vec()).unwrap())
+    }
+
+    #[test]
+    fn lab_code_is_a_valid_code() {
+        let c = Code::lab();
+        assert_eq!(c.canonical(), b"727272+727272");
+        assert_eq!(&*c.display(), "727272 + 727272");
+        assert_eq!(c.masked(), "7*****+*****2");
+        assert_eq!(
+            Code::parse_input("727272 + 727272").unwrap().canonical(),
+            c.canonical()
+        );
     }
 
     #[test]

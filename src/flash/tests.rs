@@ -6,8 +6,9 @@
 
 use super::*;
 use crate::activation::rng::SeededRand;
+use crate::activation::store::tests::{init_test_store, open_test_store};
 use crate::activation::store::tests::{one_at_a_time, temp_dir};
-use crate::activation::store::{Delivery, Store, TEST_KDF};
+use crate::activation::store::Delivery;
 use crate::attest::tests as at;
 use crate::grapheneos::testhttp::FakeHttp;
 use crate::grapheneos::zipx;
@@ -18,7 +19,6 @@ use std::path::Path;
 
 const SERIAL: &str = "TESTSERIAL6A01";
 const OTHER: &str = "OTHERPHONE9P99";
-const STORE_PASS: &str = "TEST-ONLY store passphrase";
 const VERSION: &str = "2026111801";
 const BASE: &str = "https://releases.grapheneos.org";
 const T_STABLE: u64 = 1_794_968_526;
@@ -126,7 +126,7 @@ struct Ui_ {
 
 impl Ui for Ui_ {
     fn secret(&mut self, _w: crate::deliver::Secret) -> Result<zeroize::Zeroizing<String>, String> {
-        Ok(zeroize::Zeroizing::new(STORE_PASS.into()))
+        Ok(zeroize::Zeroizing::new("TEST-ONLY-PASSPHRASE".into()))
     }
     fn confirm(&mut self, _w: &str, _q: &str) -> Result<bool, String> {
         self.confirm.clone()
@@ -164,13 +164,7 @@ impl Fx {
         let (good, root_good) = chain(0x42);
         let (wrong_chain, root_wrong) = chain(0x43);
         let store = dir.join("store/admin.sxdb");
-        Store::init(
-            &store,
-            STORE_PASS,
-            TEST_KDF,
-            &mut SeededRand::new(tag.as_bytes()),
-        )
-        .unwrap();
+        drop(init_test_store(&store, tag.as_bytes()));
         let cfg_text = format!(
             "trust_cache_dir = \"{d}/trust\"\nadb_path = \"{d}/adb\"\nfastboot_path = \"{d}/fastboot\"\n\
              agent_apk = \"{a}\"\nagent_signing_cert_sha256 = \"{a5}\"\nadmin_store_path = \"{s}\"\n\
@@ -322,8 +316,7 @@ impl Fx {
     }
 
     fn records(&self) -> Vec<Flash> {
-        Store::open(&self.dir.join("store/admin.sxdb"), STORE_PASS)
-            .unwrap()
+        open_test_store(&self.dir.join("store/admin.sxdb"))
             .data
             .flashes
     }
@@ -684,7 +677,7 @@ fn delivery_record_needs_test_device_and_setup_done_is_never_wiped() {
     let _g = one_at_a_time();
     let fx = Fx::new("record");
     {
-        let mut st = Store::open(&fx.dir.join("store/admin.sxdb"), STORE_PASS).unwrap();
+        let mut st = open_test_store(&fx.dir.join("store/admin.sxdb"));
         st.data.deliveries.push(delivered_record());
         st.save(&mut SeededRand::new(b"x")).unwrap();
     }
@@ -986,7 +979,7 @@ fn resume_after_a_late_lock_goes_to_the_setup() {
     in_fastboot(&fx, false);
     // The earlier run gave up at step 8; the lock was confirmed later and
     // the flash is on the phone.
-    let mut st = Store::open(&fx.dir.join("store/admin.sxdb"), STORE_PASS).unwrap();
+    let mut st = open_test_store(&fx.dir.join("store/admin.sxdb"));
     st.data.flashes.push(Flash {
         flash_id: "00".repeat(16),
         serial: SERIAL.into(),

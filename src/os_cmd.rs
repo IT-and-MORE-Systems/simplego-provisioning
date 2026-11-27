@@ -14,7 +14,6 @@ use crate::trust::lists::GRAPHENEOS_ALLOWED_SIGNERS;
 use crate::util::{mask_serial, now_unix};
 use crate::{exit, names};
 use serde_json::json;
-use std::path::PathBuf;
 use std::time::Duration;
 use zeroize::Zeroizing;
 
@@ -30,7 +29,6 @@ pub struct OsOpts {
     pub yes: bool,
     pub dry_run: bool,
     pub confirm_stale: bool,
-    pub store_pass_file: Option<PathBuf>,
     pub resume: bool,
 }
 
@@ -267,18 +265,13 @@ pub fn cmd_os_fetch(cfg: &Config, o: &OsOpts) -> i32 {
     }
 }
 
-/// The flash prompts: store passphrase (from a file only on a test device),
-/// typed confirmations only on a terminal (never from `--yes`).
-struct FlashUi {
-    store_pass: Option<Zeroizing<String>>,
-}
+/// The flash prompts: typed confirmations only on a terminal (never from
+/// `--yes`). The store asks for nothing (store key).
+struct FlashUi;
 
 impl Ui for FlashUi {
     fn secret(&mut self, what: Secret) -> Result<Zeroizing<String>, String> {
-        match (&self.store_pass, what) {
-            (Some(p), Secret::StorePassphrase) => Ok(p.clone()),
-            _ => TerminalUi.secret(what),
-        }
+        TerminalUi.secret(what)
     }
     fn confirm(&mut self, word: &str, question: &str) -> Result<bool, String> {
         TerminalUi.confirm(word, question)
@@ -292,22 +285,9 @@ pub fn cmd_flash(cfg: &Config, o: &OsOpts) -> i32 {
     let Some(serial) = o.serial.clone() else {
         return err(exit::USAGE, "flash needs --serial SERIAL");
     };
-    if o.store_pass_file.is_some() && !o.test_device {
-        return err(
-            exit::USAGE,
-            "--test-store-passphrase-file is only for --test-device",
-        );
-    }
     if cfg.fastboot_path.is_empty() {
         return err(exit::CONFIG, "flash needs fastboot_path in the config");
     }
-    let store_pass = match &o.store_pass_file {
-        Some(p) => match deliver_cmd::read_pass_file(p) {
-            Ok(x) => Some(x),
-            Err(e) => return err(exit::USAGE, e),
-        },
-        None => None,
-    };
     let cache_dir = match cfg.grapheneos_cache() {
         Ok(c) => c,
         Err(e) => return err(exit::CONFIG, e),
@@ -345,7 +325,7 @@ pub fn cmd_flash(cfg: &Config, o: &OsOpts) -> i32 {
     if let Some(w) = &why {
         println!("network: offline ({w}); only cached channel files and images are used");
     }
-    let mut ui = FlashUi { store_pass };
+    let mut ui = FlashUi;
     let mut ch = deliver_cmd::challenge;
     let mut rng = crate::activation::rng::SystemRand::new();
     let now = now_unix;

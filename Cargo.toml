@@ -3,7 +3,7 @@
 
 [package]
 name = "sxprov"
-version = "0.1.0-alpha"
+version = "0.2.0-alpha"
 edition = "2021"
 publish = false
 description = "SimpleGo Provisioning: verify, deliver and flash SimpleGo phones from the admin laptop"
@@ -16,6 +16,11 @@ name = "sxprov"
 path = "src/main.rs"
 
 [dependencies]
+# Backups (age-encryption.org/v1, backup format section 7): X25519 and scrypt
+# recipients, binary output; no optional feature (no armor, ssh, plugin).
+age = { version = "=0.11.5", default-features = false }
+age-core = "=0.11.0"
+bech32 = "=0.9.1"
 argon2 = { version = "=0.6.0", default-features = false, features = ["alloc", "zeroize"] }
 miniz_oxide = { version = "=0.8.9", default-features = false, features = ["with-alloc"] }
 base64ct = { version = "1.8", features = ["alloc"] }
@@ -46,6 +51,20 @@ strip = true
 opt-level = 3
 
 [profile.dev.package.blake2]
+opt-level = 3
+
+# scrypt with work factor 20 (1 GiB) is very slow unoptimised; the backup
+# tests unwrap it.
+[profile.dev.package.scrypt]
+opt-level = 3
+
+[profile.dev.package.salsa20]
+opt-level = 3
+
+[profile.dev.package.pbkdf2]
+opt-level = 3
+
+[profile.dev.package.sha2]
 opt-level = 3
 
 # Test only: the fake adb of the delivery tests. An example target, so

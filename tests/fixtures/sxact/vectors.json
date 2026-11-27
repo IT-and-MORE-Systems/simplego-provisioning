@@ -1,5 +1,5 @@
 {
-  "format": "SXACT version 1 (activation-file-format.md, version 1 with the amendments of 2026-11-19 23:10, 2026-11-21 00:41, 2026-11-21 10:30 and 2026-11-21 11:00)",
+  "format": "SXACT version 1 (activation-file-format.md, version 1 with the amendments of 2026-11-19 23:10, 2026-11-21 00:41, 2026-11-21 10:30, 2026-11-21 11:00 and 2026-11-23, and section 12 of 2026-11-27 with 12.4)",
   "generator": "src/activation/vectors.rs in simplego-provisioning (SXACT_WRITE_VECTORS=1 cargo test vectors)",
   "test_key": {
     "key_id_hex": "dbbf11596d8029cbde96c679267d911e",
@@ -1340,6 +1340,894 @@
       "name": "refused-device-class-and-mode-rule-on-desktop",
       "note": "the same file imported by the desktop app: the mode rule",
       "reason": "network mode rule broken: servers.xftp[0]: tor_optional needs an onion host and a clearnet host in every address",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "735276x490904",
+      "expected": "ok",
+      "expected_features_fixed": "calculator_disguise:on,calls:on,channels:off,files:on,groups:off,laptop_link:off,preset_servers:off,vault:off",
+      "expected_features_profile": "1ac91a30c59ee35f",
+      "expected_payload": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "phone",
+        "features": {
+          "calculator_disguise": "on",
+          "calls": "on",
+          "channels": "off",
+          "developer_tools": "ask",
+          "files": "on",
+          "groups": "off",
+          "laptop_link": "off",
+          "preset_servers": "off",
+          "profile_version": 1,
+          "vault": "off",
+          "voice_messages": "ask"
+        },
+        "file_id": "ad40cfae1d5ec2799edecf7ec38ed20c",
+        "issued_at": "2026-11-19T12:00:00Z",
+        "kind": "activation",
+        "network_mode": "tor_required",
+        "payload_version": 1,
+        "sequence": 0,
+        "servers": {
+          "smp": [
+            "smp://os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo:TEST-ONLY-PASSWORD@testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion"
+          ],
+          "xftp": [
+            "xftp://bHRK7qr8MA41K9dw3wVjRVkHUh2GkB5H9H3Hl2EP8Gg:TEST-ONLY-PASSWORD@testonlyxftpatestonlyxftpatestonlyxftpatestonlyxftpf3iad.onion:443"
+          ]
+        },
+        "support_address": "simplex:/contact#/?v=2-7&smp=smp%3A%2F%2F9s73H6gTl877RjGQ5pn339wJvGtjnkpedCq9FvmSmyY%40testonlysupporttestonlysupporttestonlysupporttestonoynqd.onion%2FzTSDY5LhYCOu2DuNwnglcNxtLEOCkfnr%23%2F%3Fv%3D1-4%26dh%3DMCowBQYDK2VuAyEAmLdt0a_L7q3_CKhTVm76_kQOlcDo0lY98hBaG7och3A%253D%26q%3Dc",
+        "update_key": "338553416a8fce785932b6a0cd61c688f9678f4dcfe7a4167d75d74709c9a882"
+      },
+      "file": "activation-phone-features.sxact",
+      "kind": "activation",
+      "name": "activation-phone-features",
+      "note": "phone file with every switch: on, off and ask; the desktop-only switches laptop_link and vault off, developer_tools ask (accepted in a phone file)",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "desktop",
+      "code": "929072+630215",
+      "expected": "ok",
+      "expected_features_fixed": "calls:on,channels:off,developer_tools:off,files:on,laptop_link:on,preset_servers:off,vault:on,voice_messages:off",
+      "expected_features_profile": "2fca149f9156e7de",
+      "expected_payload": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "desktop",
+        "features": {
+          "calculator_disguise": "ask",
+          "calls": "on",
+          "channels": "off",
+          "developer_tools": "off",
+          "files": "on",
+          "groups": "ask",
+          "laptop_link": "on",
+          "preset_servers": "off",
+          "profile_version": 1,
+          "vault": "on",
+          "voice_messages": "off"
+        },
+        "file_id": "a9c4d5530712869c1b71f4fd0559b2de",
+        "issued_at": "2026-11-19T12:00:00Z",
+        "kind": "activation",
+        "network_mode": "tor_required",
+        "payload_version": 1,
+        "sequence": 0,
+        "servers": {
+          "smp": [
+            "smp://os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo:TEST-ONLY-PASSWORD@testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion"
+          ],
+          "xftp": [
+            "xftp://bHRK7qr8MA41K9dw3wVjRVkHUh2GkB5H9H3Hl2EP8Gg:TEST-ONLY-PASSWORD@testonlyxftpatestonlyxftpatestonlyxftpatestonlyxftpf3iad.onion:443"
+          ]
+        },
+        "support_address": "simplex:/contact#/?v=2-7&smp=smp%3A%2F%2F9s73H6gTl877RjGQ5pn339wJvGtjnkpedCq9FvmSmyY%40testonlysupporttestonlysupporttestonlysupporttestonoynqd.onion%2FzTSDY5LhYCOu2DuNwnglcNxtLEOCkfnr%23%2F%3Fv%3D1-4%26dh%3DMCowBQYDK2VuAyEAmLdt0a_L7q3_CKhTVm76_kQOlcDo0lY98hBaG7och3A%253D%26q%3Dc",
+        "update_key": "338553416a8fce785932b6a0cd61c688f9678f4dcfe7a4167d75d74709c9a882"
+      },
+      "file": "activation-desktop-features.sxact",
+      "kind": "activation",
+      "name": "activation-desktop-features",
+      "note": "desktop file with every switch, the desktop-only switches laptop_link and vault on",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "735276x490904",
+      "expected": "ok",
+      "expected_features_fixed": "calls:on,groups:off",
+      "expected_features_profile": "73474bf3c355d1e7",
+      "expected_payload": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "phone",
+        "features": {
+          "calls": "on",
+          "groups": "off",
+          "profile_version": 1
+        },
+        "file_id": "1c5323117f3ac5f631d3baacff43f96d",
+        "issued_at": "2026-11-19T12:00:00Z",
+        "kind": "activation",
+        "network_mode": "tor_required",
+        "payload_version": 1,
+        "sequence": 0,
+        "servers": {
+          "smp": [
+            "smp://os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo:TEST-ONLY-PASSWORD@testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion"
+          ],
+          "xftp": [
+            "xftp://bHRK7qr8MA41K9dw3wVjRVkHUh2GkB5H9H3Hl2EP8Gg:TEST-ONLY-PASSWORD@testonlyxftpatestonlyxftpatestonlyxftpatestonlyxftpf3iad.onion:443"
+          ]
+        },
+        "support_address": "simplex:/contact#/?v=2-7&smp=smp%3A%2F%2F9s73H6gTl877RjGQ5pn339wJvGtjnkpedCq9FvmSmyY%40testonlysupporttestonlysupporttestonlysupporttestonoynqd.onion%2FzTSDY5LhYCOu2DuNwnglcNxtLEOCkfnr%23%2F%3Fv%3D1-4%26dh%3DMCowBQYDK2VuAyEAmLdt0a_L7q3_CKhTVm76_kQOlcDo0lY98hBaG7och3A%253D%26q%3Dc",
+        "update_key": "338553416a8fce785932b6a0cd61c688f9678f4dcfe7a4167d75d74709c9a882"
+      },
+      "file": "activation-phone-features-missing-switch.sxact",
+      "kind": "activation",
+      "name": "activation-phone-features-missing-switch",
+      "note": "only groups off and calls on; every missing switch is not fixed (like ask)",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "735276x490904",
+      "expected": "ok",
+      "expected_features_fixed": "calls:on,groups:off",
+      "expected_features_profile": "ebef855551c8578e",
+      "expected_payload": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "phone",
+        "features": {
+          "calls": "on",
+          "files": "ask",
+          "groups": "off",
+          "profile_version": 1
+        },
+        "file_id": "740a0794fb45df1a44fb212250b1a6b6",
+        "issued_at": "2026-11-19T12:00:00Z",
+        "kind": "activation",
+        "network_mode": "tor_required",
+        "payload_version": 1,
+        "sequence": 0,
+        "servers": {
+          "smp": [
+            "smp://os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo:TEST-ONLY-PASSWORD@testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion"
+          ],
+          "xftp": [
+            "xftp://bHRK7qr8MA41K9dw3wVjRVkHUh2GkB5H9H3Hl2EP8Gg:TEST-ONLY-PASSWORD@testonlyxftpatestonlyxftpatestonlyxftpatestonlyxftpf3iad.onion:443"
+          ]
+        },
+        "support_address": "simplex:/contact#/?v=2-7&smp=smp%3A%2F%2F9s73H6gTl877RjGQ5pn339wJvGtjnkpedCq9FvmSmyY%40testonlysupporttestonlysupporttestonlysupporttestonoynqd.onion%2FzTSDY5LhYCOu2DuNwnglcNxtLEOCkfnr%23%2F%3Fv%3D1-4%26dh%3DMCowBQYDK2VuAyEAmLdt0a_L7q3_CKhTVm76_kQOlcDo0lY98hBaG7och3A%253D%26q%3Dc",
+        "update_key": "338553416a8fce785932b6a0cd61c688f9678f4dcfe7a4167d75d74709c9a882"
+      },
+      "file": "activation-phone-features-explicit-ask.sxact",
+      "kind": "activation",
+      "name": "activation-phone-features-explicit-ask",
+      "note": "as activation-phone-features-missing-switch plus files ask: the same features_fixed, another features_profile (the hash is not normalized, section 12.4)",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "735276x490904",
+      "expected": "ok",
+      "expected_features_fixed": "",
+      "expected_features_profile": "1c59add351c4454e",
+      "expected_payload": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "phone",
+        "features": {
+          "profile_version": 1
+        },
+        "file_id": "eae74ef4313955891a1840596bd68168",
+        "issued_at": "2026-11-19T12:00:00Z",
+        "kind": "activation",
+        "network_mode": "tor_required",
+        "payload_version": 1,
+        "sequence": 0,
+        "servers": {
+          "smp": [
+            "smp://os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo:TEST-ONLY-PASSWORD@testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion"
+          ],
+          "xftp": [
+            "xftp://bHRK7qr8MA41K9dw3wVjRVkHUh2GkB5H9H3Hl2EP8Gg:TEST-ONLY-PASSWORD@testonlyxftpatestonlyxftpatestonlyxftpatestonlyxftpf3iad.onion:443"
+          ]
+        },
+        "support_address": "simplex:/contact#/?v=2-7&smp=smp%3A%2F%2F9s73H6gTl877RjGQ5pn339wJvGtjnkpedCq9FvmSmyY%40testonlysupporttestonlysupporttestonlysupporttestonoynqd.onion%2FzTSDY5LhYCOu2DuNwnglcNxtLEOCkfnr%23%2F%3Fv%3D1-4%26dh%3DMCowBQYDK2VuAyEAmLdt0a_L7q3_CKhTVm76_kQOlcDo0lY98hBaG7och3A%253D%26q%3Dc",
+        "update_key": "338553416a8fce785932b6a0cd61c688f9678f4dcfe7a4167d75d74709c9a882"
+      },
+      "file": "activation-phone-features-nothing-fixed.sxact",
+      "kind": "activation",
+      "name": "activation-phone-features-nothing-fixed",
+      "note": "only profile_version: nothing is fixed, features_fixed is empty",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "735276x490904",
+      "expected": "ok",
+      "expected_features_fixed": "groups:on,vault:off",
+      "expected_features_profile": "3372a31c3d382775",
+      "expected_payload": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "phone",
+        "features": {
+          "groups": "on",
+          "profile_version": 1,
+          "vault": "off"
+        },
+        "file_id": "a94d1bcafc2ba0df4f429020d7fc9969",
+        "issued_at": "2026-11-19T12:00:00Z",
+        "kind": "activation",
+        "network_mode": "tor_required",
+        "payload_version": 1,
+        "sequence": 0,
+        "servers": {
+          "smp": [
+            "smp://os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo:TEST-ONLY-PASSWORD@testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion"
+          ],
+          "xftp": [
+            "xftp://bHRK7qr8MA41K9dw3wVjRVkHUh2GkB5H9H3Hl2EP8Gg:TEST-ONLY-PASSWORD@testonlyxftpatestonlyxftpatestonlyxftpatestonlyxftpf3iad.onion:443"
+          ]
+        },
+        "support_address": "simplex:/contact#/?v=2-7&smp=smp%3A%2F%2F9s73H6gTl877RjGQ5pn339wJvGtjnkpedCq9FvmSmyY%40testonlysupporttestonlysupporttestonlysupporttestonoynqd.onion%2FzTSDY5LhYCOu2DuNwnglcNxtLEOCkfnr%23%2F%3Fv%3D1-4%26dh%3DMCowBQYDK2VuAyEAmLdt0a_L7q3_CKhTVm76_kQOlcDo0lY98hBaG7och3A%253D%26q%3Dc",
+        "update_key": "338553416a8fce785932b6a0cd61c688f9678f4dcfe7a4167d75d74709c9a882"
+      },
+      "file": "activation-phone-features-desktop-switch-off.sxact",
+      "kind": "activation",
+      "name": "activation-phone-features-desktop-switch-off",
+      "note": "the desktop-only switch vault off in a phone file: accepted",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "735276x490904",
+      "expected": "bad_payload",
+      "file": "refused-features-unknown-switch.sxact",
+      "kind": "activation",
+      "name": "refused-features-unknown-switch",
+      "note": "an unknown switch name (stories): the whole file is refused",
+      "reason": "invalid payload: unknown field `stories`, expected one of `profile_version`, `groups`, `channels`, `preset_servers`, `calls`, `files`, `voice_messages`, `calculator_disguise`, `laptop_link`, `developer_tools`, `vault` at line 1 column 116",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "735276x490904",
+      "expected": "bad_payload",
+      "file": "refused-features-unknown-value.sxact",
+      "kind": "activation",
+      "name": "refused-features-unknown-value",
+      "note": "an unknown value (disabled) for groups",
+      "reason": "invalid payload: unknown variant `disabled`, expected one of `on`, `off`, `ask` at line 1 column 91",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "735276x490904",
+      "expected": "bad_payload",
+      "file": "refused-features-missing-profile-version.sxact",
+      "kind": "activation",
+      "name": "refused-features-missing-profile-version",
+      "note": "features without profile_version",
+      "reason": "invalid payload: missing field `profile_version` at line 1 column 87",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "735276x490904",
+      "expected": "bad_payload",
+      "file": "refused-features-profile-version-2.sxact",
+      "kind": "activation",
+      "name": "refused-features-profile-version-2",
+      "note": "profile_version 2",
+      "reason": "invalid payload: features: profile_version must be 1",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "735276x490904",
+      "expected": "bad_payload",
+      "file": "refused-features-profile-version-float.sxact",
+      "kind": "activation",
+      "name": "refused-features-profile-version-float",
+      "note": "profile_version written 1.0: integers are read as integers",
+      "reason": "invalid payload: invalid type: floating point `1.0`, expected u32 at line 1 column 108",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "735276x490904",
+      "expected": "bad_payload",
+      "file": "refused-features-null.sxact",
+      "kind": "activation",
+      "name": "refused-features-null",
+      "note": "features: null (present, so it must be an object)",
+      "reason": "invalid payload: invalid type: null, expected a JSON object at line 1 column 75",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "735276x490904",
+      "expected": "bad_payload",
+      "file": "refused-features-duplicate-switch.sxact",
+      "kind": "activation",
+      "name": "refused-features-duplicate-switch",
+      "note": "groups twice in the features object (off, then on): a duplicate key is refused, never read as the last value",
+      "reason": "invalid payload: duplicate field `groups` at line 1 column 961",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "735276x490904",
+      "expected": "bad_payload",
+      "file": "refused-features-phone-desktop-switch-on.sxact",
+      "kind": "activation",
+      "name": "refused-features-phone-desktop-switch-on",
+      "note": "the desktop-only switch vault on in a phone file",
+      "reason": "invalid payload: features: vault exists only on the desktop; a phone file may set it off or ask, not on",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "expected": "ok",
+      "expected_features_fixed": "calculator_disguise:on,calls:off,channels:off,files:on,laptop_link:off,preset_servers:off,vault:off",
+      "expected_features_profile": "27b0ab343636cbc9",
+      "expected_payload": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "phone",
+        "features": {
+          "calculator_disguise": "on",
+          "calls": "off",
+          "channels": "off",
+          "developer_tools": "ask",
+          "files": "on",
+          "groups": "ask",
+          "laptop_link": "off",
+          "preset_servers": "off",
+          "profile_version": 1,
+          "vault": "off",
+          "voice_messages": "ask"
+        },
+        "file_id": "efad185537086b1bf32e83a165c216cd",
+        "issued_at": "2026-11-19T12:00:00Z",
+        "kind": "update",
+        "network_mode": "tor_required",
+        "payload_version": 1,
+        "sequence": 1,
+        "servers": {
+          "smp": [
+            "smp://os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo:TEST-ONLY-PASSWORD@testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion"
+          ],
+          "xftp": [
+            "xftp://bHRK7qr8MA41K9dw3wVjRVkHUh2GkB5H9H3Hl2EP8Gg:TEST-ONLY-PASSWORD@testonlyxftpatestonlyxftpatestonlyxftpatestonlyxftpf3iad.onion:443"
+          ]
+        },
+        "support_address": "simplex:/contact#/?v=2-7&smp=smp%3A%2F%2F9s73H6gTl877RjGQ5pn339wJvGtjnkpedCq9FvmSmyY%40testonlysupporttestonlysupporttestonlysupporttestonoynqd.onion%2FzTSDY5LhYCOu2DuNwnglcNxtLEOCkfnr%23%2F%3Fv%3D1-4%26dh%3DMCowBQYDK2VuAyEAmLdt0a_L7q3_CKhTVm76_kQOlcDo0lY98hBaG7och3A%253D%26q%3Dc"
+      },
+      "file": "update-phone-features-change.sxact",
+      "installation": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "phone",
+        "features": {
+          "calculator_disguise": "on",
+          "calls": "on",
+          "channels": "off",
+          "developer_tools": "ask",
+          "files": "on",
+          "groups": "off",
+          "laptop_link": "off",
+          "preset_servers": "off",
+          "profile_version": 1,
+          "vault": "off",
+          "voice_messages": "ask"
+        },
+        "features_profile": "1ac91a30c59ee35f",
+        "last_sequence": 0,
+        "update_key_hex": "338553416a8fce785932b6a0cd61c688f9678f4dcfe7a4167d75d74709c9a882",
+        "update_key_id_hex": "2b00b59645a8dfac24fbadf9a780fe3c"
+      },
+      "kind": "update",
+      "name": "update-phone-features-change",
+      "note": "sequence 1 after activation-phone-features: replaces the whole profile; groups goes from off to ask (named in the summary as no longer fixed off), calls from on to off",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "expected": "ok",
+      "expected_features_fixed": "calculator_disguise:on,calls:on,channels:off,files:on,groups:off,laptop_link:off,preset_servers:off,vault:off",
+      "expected_features_profile": "1ac91a30c59ee35f",
+      "expected_payload": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "phone",
+        "file_id": "fc2dba6bd3c1ad819fadecd5ec9ee05a",
+        "issued_at": "2026-11-19T12:00:00Z",
+        "kind": "update",
+        "network_mode": "tor_required",
+        "payload_version": 1,
+        "sequence": 1,
+        "servers": {
+          "smp": [
+            "smp://os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo:TEST-ONLY-PASSWORD@testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion"
+          ],
+          "xftp": [
+            "xftp://bHRK7qr8MA41K9dw3wVjRVkHUh2GkB5H9H3Hl2EP8Gg:TEST-ONLY-PASSWORD@testonlyxftpatestonlyxftpatestonlyxftpatestonlyxftpf3iad.onion:443"
+          ]
+        },
+        "support_address": "simplex:/contact#/?v=2-7&smp=smp%3A%2F%2F9s73H6gTl877RjGQ5pn339wJvGtjnkpedCq9FvmSmyY%40testonlysupporttestonlysupporttestonlysupporttestonoynqd.onion%2FzTSDY5LhYCOu2DuNwnglcNxtLEOCkfnr%23%2F%3Fv%3D1-4%26dh%3DMCowBQYDK2VuAyEAmLdt0a_L7q3_CKhTVm76_kQOlcDo0lY98hBaG7och3A%253D%26q%3Dc"
+      },
+      "file": "update-phone-without-features.sxact",
+      "installation": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "phone",
+        "features": {
+          "calculator_disguise": "on",
+          "calls": "on",
+          "channels": "off",
+          "developer_tools": "ask",
+          "files": "on",
+          "groups": "off",
+          "laptop_link": "off",
+          "preset_servers": "off",
+          "profile_version": 1,
+          "vault": "off",
+          "voice_messages": "ask"
+        },
+        "features_profile": "1ac91a30c59ee35f",
+        "last_sequence": 0,
+        "update_key_hex": "338553416a8fce785932b6a0cd61c688f9678f4dcfe7a4167d75d74709c9a882",
+        "update_key_id_hex": "2b00b59645a8dfac24fbadf9a780fe3c"
+      },
+      "kind": "update",
+      "name": "update-phone-without-features",
+      "note": "an update without features on an installation with a profile: the profile stays unchanged (section 12.4)",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "expected": "bad_payload",
+      "file": "refused-update-features-phone-desktop-switch-on.sxact",
+      "installation": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "phone",
+        "features": {
+          "calculator_disguise": "on",
+          "calls": "on",
+          "channels": "off",
+          "developer_tools": "ask",
+          "files": "on",
+          "groups": "off",
+          "laptop_link": "off",
+          "preset_servers": "off",
+          "profile_version": 1,
+          "vault": "off",
+          "voice_messages": "ask"
+        },
+        "features_profile": "1ac91a30c59ee35f",
+        "last_sequence": 0,
+        "update_key_hex": "338553416a8fce785932b6a0cd61c688f9678f4dcfe7a4167d75d74709c9a882",
+        "update_key_id_hex": "2b00b59645a8dfac24fbadf9a780fe3c"
+      },
+      "kind": "update",
+      "name": "refused-update-features-phone-desktop-switch-on",
+      "note": "an update that sets the desktop-only switch vault on for a phone",
+      "reason": "invalid payload: features: vault exists only on the desktop; a phone file may set it off or ask, not on",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "735276x490904",
+      "expected": "ok",
+      "expected_features_fixed": "calculator_disguise:on,calls:on,channels:off,files:on,groups:off,laptop_link:off,preset_servers:off,vault:off",
+      "expected_features_profile": "1ac91a30c59ee35f",
+      "expected_payload": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "phone",
+        "directory": {
+          "directory_version": 1,
+          "display_name": "TEST Anna Müller-Groß",
+          "groups": [
+            {
+              "direct_contacts": true,
+              "link": "https://testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion/g#L2G4hcVLVIeJsP2SbSumU88gQtvjePVHTj_XtamBWhc?c=os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo",
+              "name": "TEST Kanzlei"
+            },
+            {
+              "direct_contacts": false,
+              "link": "https://testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion/g#letMgyX6AKo0Xp8a2H03mmvchXlGxh12RgCBFjimkK4?c=os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo",
+              "name": "TEST Empfang"
+            }
+          ],
+          "role": "owner",
+          "set_id": "aeb81e590b9d74ff86fa2338ddfa1052"
+        },
+        "features": {
+          "calculator_disguise": "on",
+          "calls": "on",
+          "channels": "off",
+          "developer_tools": "ask",
+          "files": "on",
+          "groups": "off",
+          "laptop_link": "off",
+          "preset_servers": "off",
+          "profile_version": 1,
+          "vault": "off",
+          "voice_messages": "ask"
+        },
+        "file_id": "7fea871bf09f0ea3acd712df5e722311",
+        "issued_at": "2026-11-19T12:00:00Z",
+        "kind": "activation",
+        "network_mode": "tor_required",
+        "payload_version": 1,
+        "sequence": 0,
+        "servers": {
+          "smp": [
+            "smp://os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo:TEST-ONLY-PASSWORD@testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion"
+          ],
+          "xftp": [
+            "xftp://bHRK7qr8MA41K9dw3wVjRVkHUh2GkB5H9H3Hl2EP8Gg:TEST-ONLY-PASSWORD@testonlyxftpatestonlyxftpatestonlyxftpatestonlyxftpf3iad.onion:443"
+          ]
+        },
+        "support_address": "simplex:/contact#/?v=2-7&smp=smp%3A%2F%2F9s73H6gTl877RjGQ5pn339wJvGtjnkpedCq9FvmSmyY%40testonlysupporttestonlysupporttestonlysupporttestonoynqd.onion%2FzTSDY5LhYCOu2DuNwnglcNxtLEOCkfnr%23%2F%3Fv%3D1-4%26dh%3DMCowBQYDK2VuAyEAmLdt0a_L7q3_CKhTVm76_kQOlcDo0lY98hBaG7och3A%253D%26q%3Dc",
+        "update_key": "338553416a8fce785932b6a0cd61c688f9678f4dcfe7a4167d75d74709c9a882"
+      },
+      "file": "activation-phone-directory.sxact",
+      "group_links": [
+        "https://testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion/g#L2G4hcVLVIeJsP2SbSumU88gQtvjePVHTj_XtamBWhc?c=os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo",
+        "https://testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion/g#letMgyX6AKo0Xp8a2H03mmvchXlGxh12RgCBFjimkK4?c=os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo"
+      ],
+      "kind": "activation",
+      "name": "activation-phone-directory",
+      "note": "directory with two groups (direct_contacts true and false), role owner, a display name with umlauts and a hyphen; the group links are short links https://<onion>/g#<key>?c=<key hash> on servers.smp[0]; with the full phone feature profile",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "desktop",
+      "code": "929072+630215",
+      "expected": "ok",
+      "expected_features_fixed": "calls:on,channels:off,developer_tools:off,files:on,laptop_link:on,preset_servers:off,vault:on,voice_messages:off",
+      "expected_features_profile": "2fca149f9156e7de",
+      "expected_payload": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "desktop",
+        "directory": {
+          "directory_version": 1,
+          "display_name": "TEST Anna Müller-Groß",
+          "groups": [
+            {
+              "direct_contacts": true,
+              "link": "https://testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion/g#L2G4hcVLVIeJsP2SbSumU88gQtvjePVHTj_XtamBWhc?h=smp-a.example.invalid&c=os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo",
+              "name": "TEST Kanzlei"
+            }
+          ],
+          "role": "member",
+          "set_id": "aeb81e590b9d74ff86fa2338ddfa1052"
+        },
+        "features": {
+          "calculator_disguise": "ask",
+          "calls": "on",
+          "channels": "off",
+          "developer_tools": "off",
+          "files": "on",
+          "groups": "ask",
+          "laptop_link": "on",
+          "preset_servers": "off",
+          "profile_version": 1,
+          "vault": "on",
+          "voice_messages": "off"
+        },
+        "file_id": "5e7d43e85895d3f9a6dd548fde8ad3c4",
+        "issued_at": "2026-11-19T12:00:00Z",
+        "kind": "activation",
+        "network_mode": "tor_optional",
+        "payload_version": 1,
+        "sequence": 0,
+        "servers": {
+          "smp": [
+            "smp://os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo:TEST-ONLY-PASSWORD@testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion,smp-a.example.invalid"
+          ],
+          "xftp": [
+            "xftp://bHRK7qr8MA41K9dw3wVjRVkHUh2GkB5H9H3Hl2EP8Gg:TEST-ONLY-PASSWORD@testonlyxftpatestonlyxftpatestonlyxftpatestonlyxftpf3iad.onion,xftp-a.example.invalid:443"
+          ]
+        },
+        "support_address": "simplex:/contact#/?v=2-7&smp=smp%3A%2F%2F9s73H6gTl877RjGQ5pn339wJvGtjnkpedCq9FvmSmyY%40testonlysupporttestonlysupporttestonlysupporttestonoynqd.onion%2FzTSDY5LhYCOu2DuNwnglcNxtLEOCkfnr%23%2F%3Fv%3D1-4%26dh%3DMCowBQYDK2VuAyEAmLdt0a_L7q3_CKhTVm76_kQOlcDo0lY98hBaG7och3A%253D%26q%3Dc",
+        "update_key": "338553416a8fce785932b6a0cd61c688f9678f4dcfe7a4167d75d74709c9a882"
+      },
+      "file": "activation-desktop-directory-tor-optional.sxact",
+      "group_links": [
+        "https://testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion/g#L2G4hcVLVIeJsP2SbSumU88gQtvjePVHTj_XtamBWhc?h=smp-a.example.invalid&c=os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo"
+      ],
+      "kind": "activation",
+      "name": "activation-desktop-directory-tor-optional",
+      "note": "desktop, tor_optional, role member, one group: the link carries the server's clearnet host in h (https://<onion>/g#<key>?h=<clearnet>&c=<key hash>), as the servers rule needs",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "735276x490904",
+      "expected": "network_mode_rule",
+      "file": "refused-directory-group-link-clearnet-tor-required.sxact",
+      "group_links": [
+        "https://testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion/g#L2G4hcVLVIeJsP2SbSumU88gQtvjePVHTj_XtamBWhc?c=os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo",
+        "https://smp-a.example.invalid/g#TEST-ONLY-GROUP-LINK-KEYAAAAAAAAAAAAAAAAAAA?c=os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo"
+      ],
+      "kind": "activation",
+      "name": "refused-directory-group-link-clearnet-tor-required",
+      "note": "tor_required, the second group link's host is a clearnet host",
+      "reason": "network mode rule broken: directory.groups[1].link: tor_required needs an onion host in every address",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "735276x490904",
+      "expected": "bad_payload",
+      "file": "refused-directory-group-link-other-server.sxact",
+      "group_links": [
+        "https://testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion/g#L2G4hcVLVIeJsP2SbSumU88gQtvjePVHTj_XtamBWhc?c=os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo",
+        "https://testonlyothertestonlyothertestonlyothertestonlyotheahzad.onion/g#TEST-ONLY-GROUP-LINK-KEYAAAAAAAAAAAAAAAAAAA?c=os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo"
+      ],
+      "kind": "activation",
+      "name": "refused-directory-group-link-other-server",
+      "note": "the second group link is on a valid onion host that is not the host of servers.smp (section 12.4: the server must be one of servers.smp)",
+      "reason": "invalid payload: directory.groups[1].link: the link's server (hosts, port and key hash c) is not one of servers.smp",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "735276x490904",
+      "expected": "bad_payload",
+      "file": "refused-directory-group-link-other-key-hash.sxact",
+      "group_links": [
+        "https://testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion/g#L2G4hcVLVIeJsP2SbSumU88gQtvjePVHTj_XtamBWhc?c=os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo",
+        "https://testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion/g#TEST-ONLY-GROUP-LINK-KEYAAAAAAAAAAAAAAAAAAA?c=UIi63C963NpwhPsMsnah_R5tpev98U80TcxobF0ECTw"
+      ],
+      "kind": "activation",
+      "name": "refused-directory-group-link-other-key-hash",
+      "note": "the second group link has the host of servers.smp[0] but another key hash c",
+      "reason": "invalid payload: directory.groups[1].link: the link's server (hosts, port and key hash c) is not one of servers.smp",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "735276x490904",
+      "expected": "bad_payload",
+      "file": "refused-directory-group-link-without-c.sxact",
+      "group_links": [
+        "https://testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion/g#L2G4hcVLVIeJsP2SbSumU88gQtvjePVHTj_XtamBWhc?c=os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo",
+        "https://testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion/g#TEST-ONLY-GROUP-LINK-KEYAAAAAAAAAAAAAAAAAAA"
+      ],
+      "kind": "activation",
+      "name": "refused-directory-group-link-without-c",
+      "note": "a group link without c",
+      "reason": "invalid payload: directory.groups[1].link: group link: short link without c (the server key hash); c is required",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "735276x490904",
+      "expected": "bad_payload",
+      "file": "refused-directory-group-link-contact-address.sxact",
+      "group_links": [
+        "https://testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion/g#L2G4hcVLVIeJsP2SbSumU88gQtvjePVHTj_XtamBWhc?c=os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo",
+        "https://testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion/a#TEST-ONLY-GROUP-LINK-KEYAAAAAAAAAAAAAAAAAAA?c=os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo"
+      ],
+      "kind": "activation",
+      "name": "refused-directory-group-link-contact-address",
+      "note": "a contact address (/a#) instead of a group link",
+      "reason": "invalid payload: directory.groups[1].link: group link: /a# is a contact address, not a group link",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "735276x490904",
+      "expected": "bad_payload",
+      "file": "refused-directory-group-link-channel.sxact",
+      "group_links": [
+        "https://testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion/g#L2G4hcVLVIeJsP2SbSumU88gQtvjePVHTj_XtamBWhc?c=os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo",
+        "https://testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion/c#TEST-ONLY-GROUP-LINK-KEYAAAAAAAAAAAAAAAAAAA?c=os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo"
+      ],
+      "kind": "activation",
+      "name": "refused-directory-group-link-channel",
+      "note": "a channel link (/c#); the directory takes only groups",
+      "reason": "invalid payload: directory.groups[1].link: group link: /c# is a channel link; the directory takes only groups",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "735276x490904",
+      "expected": "bad_payload",
+      "file": "refused-directory-group-link-simplex-form.sxact",
+      "group_links": [
+        "https://testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion/g#L2G4hcVLVIeJsP2SbSumU88gQtvjePVHTj_XtamBWhc?c=os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo",
+        "simplex:/g#TEST-ONLY-GROUP-LINK-KEYAAAAAAAAAAAAAAAAAAA?h=testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion&c=os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo"
+      ],
+      "kind": "activation",
+      "name": "refused-directory-group-link-simplex-form",
+      "note": "the simplex:/g#... form",
+      "reason": "invalid payload: directory.groups[1].link: group link: the simplex:/ short link form is not accepted; use https://<host>/g#...",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "735276x490904",
+      "expected": "bad_payload",
+      "file": "refused-directory-group-link-long-form.sxact",
+      "group_links": [
+        "https://testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion/g#L2G4hcVLVIeJsP2SbSumU88gQtvjePVHTj_XtamBWhc?c=os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo",
+        "simplex:/contact#/?v=2-7&smp=smp%3A%2F%2F9s73H6gTl877RjGQ5pn339wJvGtjnkpedCq9FvmSmyY%40testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion%2FzTSDY5LhYCOu2DuNwnglcNxtLEOCkfnr%23%2F%3Fv%3D1-4%26dh%3DMCowBQYDK2VuAyEAmLdt0a_L7q3_CKhTVm76_kQOlcDo0lY98hBaG7och3A%253D%26q%3Dc&data=%7B%22groupLinkId%22%3A%22TEST%22%7D"
+      ],
+      "kind": "activation",
+      "name": "refused-directory-group-link-long-form",
+      "note": "the long form simplex:/contact#/?...&data=... of a group link",
+      "reason": "invalid payload: directory.groups[1].link: group link: the long form is not accepted; a group link is a short link https://<host>/g#...",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "735276x490904",
+      "expected": "bad_payload",
+      "file": "refused-directory-unknown-field.sxact",
+      "group_links": [
+        "https://testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion/g#L2G4hcVLVIeJsP2SbSumU88gQtvjePVHTj_XtamBWhc?c=os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo",
+        "https://testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion/g#letMgyX6AKo0Xp8a2H03mmvchXlGxh12RgCBFjimkK4?c=os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo"
+      ],
+      "kind": "activation",
+      "name": "refused-directory-unknown-field",
+      "note": "an unknown field (nickname) inside directory",
+      "reason": "invalid payload: unknown field `nickname`, expected one of `directory_version`, `set_id`, `display_name`, `role`, `groups` at line 1 column 596",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "735276x490904",
+      "expected": "bad_payload",
+      "file": "refused-directory-group-unknown-field.sxact",
+      "group_links": [
+        "https://testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion/g#L2G4hcVLVIeJsP2SbSumU88gQtvjePVHTj_XtamBWhc?c=os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo",
+        "https://testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion/g#letMgyX6AKo0Xp8a2H03mmvchXlGxh12RgCBFjimkK4?c=os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo"
+      ],
+      "kind": "activation",
+      "name": "refused-directory-group-unknown-field",
+      "note": "an unknown field (admin) inside a group",
+      "reason": "invalid payload: unknown field `admin`, expected one of `name`, `link`, `direct_contacts` at line 1 column 154",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "735276x490904",
+      "expected": "bad_payload",
+      "file": "refused-directory-unknown-role.sxact",
+      "group_links": [
+        "https://testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion/g#L2G4hcVLVIeJsP2SbSumU88gQtvjePVHTj_XtamBWhc?c=os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo",
+        "https://testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion/g#letMgyX6AKo0Xp8a2H03mmvchXlGxh12RgCBFjimkK4?c=os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo"
+      ],
+      "kind": "activation",
+      "name": "refused-directory-unknown-role",
+      "note": "role admin (only owner and member)",
+      "reason": "invalid payload: unknown variant `admin`, expected `owner` or `member` at line 1 column 600",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "735276x490904",
+      "expected": "bad_payload",
+      "file": "refused-directory-version-2.sxact",
+      "group_links": [
+        "https://testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion/g#L2G4hcVLVIeJsP2SbSumU88gQtvjePVHTj_XtamBWhc?c=os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo",
+        "https://testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion/g#letMgyX6AKo0Xp8a2H03mmvchXlGxh12RgCBFjimkK4?c=os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo"
+      ],
+      "kind": "activation",
+      "name": "refused-directory-version-2",
+      "note": "directory_version 2",
+      "reason": "invalid payload: directory: directory_version must be 1",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "735276x490904",
+      "expected": "bad_payload",
+      "file": "refused-directory-display-name-dot.sxact",
+      "group_links": [
+        "https://testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion/g#L2G4hcVLVIeJsP2SbSumU88gQtvjePVHTj_XtamBWhc?c=os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo",
+        "https://testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion/g#letMgyX6AKo0Xp8a2H03mmvchXlGxh12RgCBFjimkK4?c=os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo"
+      ],
+      "kind": "activation",
+      "name": "refused-directory-display-name-dot",
+      "note": "display_name with a dot: not a valid SimpleX name (the core refuses . , ; / \\ # @ ' \" ` ~); \"TEST Dr Weber\" is valid",
+      "reason": "invalid payload: directory: display_name: the character \".\" (U+002E) is not accepted; a name may hold Latin letters (also accented letters and umlauts, each as one character), digits, spaces and hyphens",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "735276x490904",
+      "expected": "bad_payload",
+      "file": "refused-directory-display-name-51-characters.sxact",
+      "group_links": [
+        "https://testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion/g#L2G4hcVLVIeJsP2SbSumU88gQtvjePVHTj_XtamBWhc?c=os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo",
+        "https://testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion/g#letMgyX6AKo0Xp8a2H03mmvchXlGxh12RgCBFjimkK4?c=os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo"
+      ],
+      "kind": "activation",
+      "name": "refused-directory-display-name-51-characters",
+      "note": "display_name of 51 characters (1 to 50)",
+      "reason": "invalid payload: directory: display_name must have 1 to 50 characters, it has 51",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "735276x490904",
+      "expected": "bad_payload",
+      "file": "refused-directory-group-name-double-space.sxact",
+      "group_links": [
+        "https://testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion/g#L2G4hcVLVIeJsP2SbSumU88gQtvjePVHTj_XtamBWhc?c=os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo",
+        "https://testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion/g#letMgyX6AKo0Xp8a2H03mmvchXlGxh12RgCBFjimkK4?c=os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo"
+      ],
+      "kind": "activation",
+      "name": "refused-directory-group-name-double-space",
+      "note": "a group name with two spaces in a row: the core would change it",
+      "reason": "invalid payload: directory.groups[0].name is not a valid SimpleX name: it must start with a letter or digit, must not end with a space, and must not have two spaces or two hyphens in a row (also not with a space between the hyphens)",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "735276x490904",
+      "expected": "bad_payload",
+      "file": "refused-directory-no-groups.sxact",
+      "group_links": [],
+      "kind": "activation",
+      "name": "refused-directory-no-groups",
+      "note": "groups empty (1 to 20)",
+      "reason": "invalid payload: directory: groups must have 1 to 20 entries, it has 0",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "app_device_class": "phone",
+      "code": "735276x490904",
+      "expected": "bad_payload",
+      "file": "refused-directory-set-id-upper-case.sxact",
+      "group_links": [
+        "https://testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion/g#L2G4hcVLVIeJsP2SbSumU88gQtvjePVHTj_XtamBWhc?c=os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo",
+        "https://testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion/g#letMgyX6AKo0Xp8a2H03mmvchXlGxh12RgCBFjimkK4?c=os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo"
+      ],
+      "kind": "activation",
+      "name": "refused-directory-set-id-upper-case",
+      "note": "set_id in upper case hex",
+      "reason": "invalid payload: directory: set_id must be 32 lowercase hex characters",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "expected": "bad_payload",
+      "file": "refused-update-directory.sxact",
+      "group_links": [
+        "https://testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion/g#L2G4hcVLVIeJsP2SbSumU88gQtvjePVHTj_XtamBWhc?c=os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo",
+        "https://testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion/g#letMgyX6AKo0Xp8a2H03mmvchXlGxh12RgCBFjimkK4?c=os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo"
+      ],
+      "installation": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "phone",
+        "last_sequence": 0,
+        "update_key_hex": "338553416a8fce785932b6a0cd61c688f9678f4dcfe7a4167d75d74709c9a882",
+        "update_key_id_hex": "2b00b59645a8dfac24fbadf9a780fe3c"
+      },
+      "kind": "update",
+      "name": "refused-update-directory",
+      "note": "an update file that carries a directory (directory is only in activation files)",
+      "reason": "invalid payload: directory is carried only in activation files, never in an update",
+      "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
+    },
+    {
+      "expected": "bad_payload",
+      "file": "refused-update-directory-other-customer.sxact",
+      "group_links": [
+        "https://testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion/g#L2G4hcVLVIeJsP2SbSumU88gQtvjePVHTj_XtamBWhc?c=os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo",
+        "https://testonlysmpatestonlysmpatestonlysmpatestonlysmpatesas6yd.onion/g#letMgyX6AKo0Xp8a2H03mmvchXlGxh12RgCBFjimkK4?c=os7IKbgdoplFy6EPkFG1zg-dKNmnf2hgIymkyhAOlUo"
+      ],
+      "installation": {
+        "customer_ref": "TEST-CUSTOMER-0001",
+        "device_class": "phone",
+        "last_sequence": 0,
+        "update_key_hex": "338553416a8fce785932b6a0cd61c688f9678f4dcfe7a4167d75d74709c9a882",
+        "update_key_id_hex": "2b00b59645a8dfac24fbadf9a780fe3c"
+      },
+      "kind": "update",
+      "name": "refused-update-directory-other-customer",
+      "note": "an update with a directory and another customer_ref: directory in an update is a field rule of step 5, which comes before the identity checks (as every field rule)",
+      "reason": "invalid payload: directory is carried only in activation files, never in an update",
       "trusted_public_key_hex": "7e632f9ed88c102d35eb087388cdc7601b9c9f70d24bb81c921fc22d651a51d4"
     }
   ],

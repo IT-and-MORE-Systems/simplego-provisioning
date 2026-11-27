@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 #
 # gitleaks configuration: the default rules, with two narrow exceptions for
-# test material that is public by design. Nothing else is allowed.
+# test material that is public by design (three entries). Nothing else is
+# allowed.
 
 title = "simplego-provisioning"
 
@@ -41,4 +42,20 @@ paths = [
 regexTarget = "line"
 regexes = [
   '''^\s*"update_key(_hex)?": "[0-9a-f]{64}",?$''',
+]
+
+# Vector V1 of the SimpleGo backup format (TEST ONLY): the age identity
+# derived from the published test seed 000102...1011, as the format's
+# vector table lists it. Allowed only in the key derivation test, and only
+# this exact identity, so any other age secret key is still reported.
+[[allowlists]]
+description = "Backup format vector V1 age identity (TEST ONLY, published)"
+targetRules = ["age-secret-key"]
+condition = "AND"
+paths = [
+  '''^src/backup/keys\.rs$''',
+]
+regexTarget = "match"
+regexes = [
+  '''^AGE-SECRET-KEY-1PKTXMYS98WVKRDZJA67HD0RV3AS4T049EVNXR3SRNTFX97DX0VPSAKTH4Y$''',
 ]
